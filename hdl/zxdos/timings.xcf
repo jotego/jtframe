@@ -1,0 +1,5 @@
+# Timing constraints
+NET "CLOCK_50" PERIOD=20 ns;
+NET "clk_rom"  PERIOD=20.83 ns;
+NET "SDRAM_CLK"  PERIOD=20.83 ns;
+#NET "clk_vga"  PERIOD=40 ns;
