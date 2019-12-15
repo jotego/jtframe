@@ -171,9 +171,9 @@ assign VIDEO_B  = (scan2x_enb) ? { game_b, game_b[3] } : scan2x_b[5:1];
 assign VIDEO_HS = ( scan2x_enb ) ? CSync : HSync;
 assign VIDEO_VS = ( scan2x_enb ) ? 1'b1  : VSync;
 `else
-assign VIDEO_R  = game_r;// { game_r, game_r[3:2] };
-assign VIDEO_G  = game_g;// { game_g, game_g[3:2] };
-assign VIDEO_B  = game_b;// { game_b, game_b[3:2] };
+assign VIDEO_R  = { game_r, 2'b00};// { game_r, game_r[3:2] };
+assign VIDEO_G  = { game_g, 2'b00};// { game_g, game_g[3:2] };
+assign VIDEO_B  = { game_b, 2'b00};// { game_b, game_b[3:2] };
 assign VIDEO_HS = hs;
 assign VIDEO_VS = vs;
 `endif
