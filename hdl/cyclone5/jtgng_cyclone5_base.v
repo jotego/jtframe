@@ -50,9 +50,9 @@ module jtgng_cyclone5_base(
     output wire        scan2x_enb, // scan doubler enable bar = scan doubler disable.
 	 input wire [3:0]   vgactrl_en,
     // Final video: VGA+OSD or base+OSD depending on configuration
-    output wire [4:0]   VIDEO_R,
-    output wire [4:0]   VIDEO_G,
-    output wire [4:0]   VIDEO_B,
+    output wire [5:0]   VIDEO_R,
+    output wire [5:0]   VIDEO_G,
+    output wire [5:0]   VIDEO_B,
     output wire         VIDEO_HS,
     output wire         VIDEO_VS,
 	 
@@ -138,44 +138,17 @@ data_io u_datain
 		.rom_loading    (downloading)
 	);
 
-// OSD will only get simulated if SIMULATE_OSD is defined
-`ifndef SIMULATE_OSD
-`ifndef SCANDOUBLER_DISABLE
-`ifdef SIMULATION
-`define BYPASS_OSD
-`endif
-`endif
-`endif
 
-`ifdef SIMINFO
-initial begin
-    $display("INFO: use -d SIMULATE_OSD to simulate the MiST OSD")
-end
-`endif
-
-
-`ifndef BYPASS_OSD
-// include the on screen display
-wire [5:0] osd_r_o;
-wire [5:0] osd_g_o;
-wire [5:0] osd_b_o;
 wire       HSync = scan2x_enb ? ~hs : scan2x_hs;
 wire       VSync = scan2x_enb ? ~vs : scan2x_vs;
 wire       CSync = ~(HSync ^ VSync);
 
-assign VIDEO_R  = (scan2x_enb) ? { game_r, game_r[3] } : scan2x_r[5:1];
-assign VIDEO_G  = (scan2x_enb) ? { game_g, game_g[3] } : scan2x_g[5:1];
-assign VIDEO_B  = (scan2x_enb) ? { game_b, game_b[3] } : scan2x_b[5:1];
+assign VIDEO_R  = (scan2x_enb) ? { game_r, 2'b00 } : scan2x_r[5:0];
+assign VIDEO_G  = (scan2x_enb) ? { game_g, 2'b00 } : scan2x_g[5:0];
+assign VIDEO_B  = (scan2x_enb) ? { game_b, 2'b00 } : scan2x_b[5:0];
 // a minimig vga->scart cable expects a composite sync signal on the VIDEO_HS output.
 // and VCC on VIDEO_VS (to switch into rgb mode)
 assign VIDEO_HS = ( scan2x_enb ) ? CSync : HSync;
 assign VIDEO_VS = ( scan2x_enb ) ? 1'b1  : VSync;
-`else
-assign VIDEO_R  = { game_r, 2'b00};// { game_r, game_r[3:2] };
-assign VIDEO_G  = { game_g, 2'b00};// { game_g, game_g[3:2] };
-assign VIDEO_B  = { game_b, 2'b00};// { game_b, game_b[3:2] };
-assign VIDEO_HS = hs;
-assign VIDEO_VS = vs;
-`endif
 
 endmodule // jtgng_mist_base
