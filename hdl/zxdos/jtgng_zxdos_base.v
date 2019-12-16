@@ -132,7 +132,7 @@ data_io u_datain
 		//--ROM size & Ext
 		.rom_loading    (downloading)
 	);
-ire       HSync = scan2x_enb ? ~hs : scan2x_hs;
+wire       HSync = scan2x_enb ? ~hs : scan2x_hs;
 wire       VSync = scan2x_enb ? ~vs : scan2x_vs;
 wire       CSync = ~(HSync ^ VSync);
 
