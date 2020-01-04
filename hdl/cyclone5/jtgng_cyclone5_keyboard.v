@@ -34,7 +34,7 @@ module jtgng_keyboard(
     output reg key_reset,
     output reg key_pause,
     output reg key_service,
-	 output reg [1:0] key_vgactrl,
+	 output reg [3:0] key_vgactrl,
     output reg [3:0] key_gfx
 );
 
@@ -101,7 +101,9 @@ always @(posedge clk) begin
                     9'h04        /* F3 */   : key_reset <= !key_released;
                     9'h46        /*  9 */   : key_service <= !key_released;
 					     9'h0_7E                 : key_vgactrl[0] <= !key_released; //Bloq Despl
-					     9'h0_7B, 9'h03 /* F5 */ : key_vgactrl[1] <= !key_released; //'-' Teclado Numerico
+					     9'h0_7B, 9'h03 /* F5 */ : key_vgactrl[1] <= !key_released; //F5 y '-' Teclado Numerico "Scanlines"
+						  9'h0B          /* F6 */ : key_vgactrl[2] <= !key_released; //F6 "Invertir Pantalla"
+						  9'h0_7C        /* *  */ : key_vgactrl[3] <= !key_released; //'*' Teclado Numerico "Modo Test"
                     // GFX enable
                     9'h0_83: key_gfx[0] <= !key_released; // F7: CHAR enable
                     9'h0_0a: key_gfx[1] <= !key_released; // F8: SCR1 enable

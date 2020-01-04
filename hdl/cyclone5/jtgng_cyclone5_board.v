@@ -16,13 +16,18 @@
     Version: 1.0
     Date: 25-9-2019 */
 
-module jtframe_board(
+module jtframe_board #(parameter
+    THREE_BUTTONS           = 0,
+    GAME_INPUTS_ACTIVE_LOW  = 1'b1,
+    COLORW                  = 4
+)(
     output  reg       rst,      // use as synchrnous reset
     output  reg       rst_n,    // use as asynchronous reset
     output  reg       game_rst,
     output  reg       game_rst_n,
     // reset forcing signals:
     input             rst_req,
+
     input             clk_sys,
     input             clk_rom,
     input             clk_vga,
@@ -39,6 +44,7 @@ module jtframe_board(
     input  [ 7:0]     prog_data,
     input  [ 1:0]     prog_mask,
     input             prog_we,
+    input             prog_rd,
     input             downloading,
     // SDRAM interface
     inout  [15:0]     SDRAM_DQ,       // SDRAM Data bus 16 Bits
@@ -55,9 +61,8 @@ module jtframe_board(
     input             ps2_kbd_clk,
     input             ps2_kbd_data,
     // joystick
-    output 			    JOY_CLK, 
-    output			    JOY_LOAD,
-    input 			    JOY_DATA,
+    input     [15:0]  board_joystick1,
+    input     [15:0]  board_joystick2,
     output reg [9:0]  game_joystick1,
     output reg [9:0]  game_joystick2,
     output reg [1:0]  game_coin,
@@ -79,9 +84,9 @@ module jtframe_board(
     output    [ 1:0]  dip_fxlevel,
     // Base video
     input     [ 1:0]  osd_rotate,
-    input     [ 3:0]  game_r,
-    input     [ 3:0]  game_g,
-    input     [ 3:0]  game_b,
+    input [COLORW-1:0] game_r,
+    input [COLORW-1:0] game_g,
+    input [COLORW-1:0] game_b,
     input             LHBL,
     input             LVBL,
     input             hs,
@@ -109,13 +114,9 @@ module jtframe_board(
     output            scan2x_cen,
     output            scan2x_de,
     // GFX enable
-	 output reg [3:0]  vgactrl_en,
+    output reg [3:0]  vgactrl_en,
     output reg [3:0]  gfx_en
 );
-
-
-parameter THREE_BUTTONS=1;
-parameter GAME_INPUTS_ACTIVE_LOW=1'b1;
 
 wire  [ 2:0]  scanlines;
 wire          en_mixing;
@@ -152,7 +153,7 @@ always @(negedge clk_sys) begin
         game_rst_cnt <= 8'd0;
         game_rst     <= 1'b1;
     end
-    if( game_rst_cnt != ~8'b0 ) begin
+    else if( game_rst_cnt != ~8'b0 ) begin
         game_rst <= 1'b1;
         game_rst_cnt <= game_rst_cnt + 8'd1;
     end else game_rst <= 1'b0;
@@ -172,7 +173,7 @@ always @(posedge clk_sys)
 wire [9:0] key_joy1, key_joy2;
 wire [1:0] key_start, key_coin;
 wire [3:0] key_gfx;
-wire [1:0] key_vgactrl;
+wire [3:0] key_vgactrl;
 wire       key_service;
 
 `ifndef SIMULATION
@@ -190,7 +191,7 @@ jtgng_keyboard u_keyboard(
     .key_reset   ( key_reset     ),
     .key_pause   ( key_pause     ),
     .key_service ( key_service   ),
-	 .key_vgactrl ( key_vgactrl   ),	 
+    .key_vgactrl ( key_vgactrl   ),	
     .key_gfx     ( key_gfx       )
 );
 `else
@@ -203,67 +204,11 @@ assign key_pause   = 1'b0;
 assign key_service = 1'b0;
 `endif
 
-reg [7:0] delay_count;
-wire ena_x;
- always @ (posedge clk_sys) begin
-    delay_count <= delay_count + 1'b1;
- end
- assign ena_x = delay_count[7];
- reg [15:0] joy1  = 16'hFFFF, joy2  = 16'hFFFF;
- reg joy_renew = 1'b1;
- reg [4:0]joy_count = 5'd0;
-
- assign JOY_CLK = ena_x;
- assign JOY_LOAD = joy_renew;
- always @(posedge ena_x) begin 
-		if (joy_count == 5'd0) begin
-			joy_renew = 1'b0;
-		end else begin
-			joy_renew = 1'b1;
-		end
-		if (joy_count == 5'd14) begin
-		  joy_count = 5'd0;
-		end else begin
-		  joy_count = joy_count + 1'd1;
-		end		
-	end
-	always @(posedge ena_x) begin
-		case (joy_count)
-				5'd2  : joy1[5]  <= JOY_DATA; //1p Fuego 2
-				5'd3  : joy1[4]  <= JOY_DATA; //1p Fuego 1 
-				5'd4  : joy1[0]  <= JOY_DATA; //1p Derecha 
-				5'd5  : joy1[1]  <= JOY_DATA; //1p Izquierda
-				5'd6  : joy1[2]  <= JOY_DATA; //1p Abajo
-				5'd7  : joy1[3]  <= JOY_DATA; //1p Ariba
-				5'd8  : joy2[5]  <= JOY_DATA; //2p Fuego 2
-				5'd9  : joy2[4]  <= JOY_DATA; //2p Fuego 1
-				5'd10 : joy2[0]  <= JOY_DATA; //2p Derecha
-				5'd11 : joy2[1]  <= JOY_DATA; //2p Izquierda
-				5'd12 : joy2[2]  <= JOY_DATA; //2p Abajo
-				5'd13 : joy2[3]  <= JOY_DATA; //2p Arriba
-      endcase					
-	  end
-
 reg [15:0] joy1_sync, joy2_sync;
+
 always @(posedge clk_sys) begin
-`ifndef JOY_GUNSMOKE
-    joy1_sync <=  ~joy1;
-    joy2_sync <=  ~joy2;
-
-`else //Se convierte 1 disparo mas direccion, a 3 disparos.
-	joy1_sync[14:7] <=  ~joy1[14:7];
-	joy1_sync[3:0]  <=  ~joy1[3:0];
-	joy1_sync[4]    <=  ~joy1[4] &  joy1[0] & ~joy1[1]; //pulsado Fuego e Izquierda
-	joy1_sync[5]    <=  ~joy1[4] &  joy1[0] &  joy1[1]; //Solo pulsado el fuego sin derecha ni izda
-	joy1_sync[6]    <=  ~joy1[4] & ~joy1[0] &  joy1[1]; //pulsado Fuego y Derecha
-	
-
-	joy2_sync[14:7] <=  ~joy2[14:7];
-	joy2_sync[3:0]  <=  ~joy2[3:0];
-	joy2_sync[4]    <=  ~joy2[4] &  joy2[0] & ~joy2[1]; //pulsado Fuego e Izquierda
-	joy2_sync[5]    <=  ~joy2[4] &  joy2[0] &  joy2[1]; //Solo pulsado el fuego sin derecha ni izda
-	joy2_sync[6]    <=  ~joy2[4] & ~joy2[0] &  joy2[1]; //pulsado Fuego y Derecha
-`endif	
+    joy1_sync <= board_joystick1;
+    joy2_sync <= board_joystick2;
 end
 
 localparam START1_BIT = 6+THREE_BUTTONS;
@@ -273,20 +218,35 @@ localparam PAUSE_BIT  = 9+THREE_BUTTONS;
 
 reg last_pause, last_joypause, last_reset;
 reg [3:0] last_gfx;
-reg [1:0] last_vgactrl;
+reg [3:0] last_vgactrl;
 wire joy_pause = joy1_sync[PAUSE_BIT] | joy2_sync[PAUSE_BIT];
 
 integer cnt;
 
-function [10:0] apply_rotation;
-    input [10:0] joy_in;
+function [9:0] apply_rotation;
+    input [9:0] joy_in;
     input       rot;
     input       invert;
     begin
-    apply_rotation = {11{invert}} ^ 
-        (!rot ? joy_in : { joy_in[10:4], joy_in[0], joy_in[1], joy_in[3], joy_in[2] });
+    apply_rotation = {10{invert}} ^ 
+        (!rot ? joy_in : { joy_in[9:4], joy_in[0], joy_in[1], joy_in[3], joy_in[2] });
     end
 endfunction
+
+`ifdef SIM_INPUTS
+    reg [15:0] sim_inputs[0:16383];
+    integer frame_cnt;
+    initial begin : read_sim_inputs
+        integer c;
+        for( c=0; c<16384; c=c+1 ) sim_inputs[c] = 8'h0;
+        $readmemh( "sim_inputs.hex", sim_inputs );
+    end
+    always @(negedge LVBL, posedge rst) begin
+        if( rst )
+            frame_cnt <= 0;
+        else frame_cnt <= frame_cnt+1;
+    end
+`endif
 
 always @(posedge clk_sys)
     if(rst ) begin
@@ -299,28 +259,37 @@ always @(posedge clk_sys)
         last_reset   <= key_reset;
         last_joypause <= joy_pause; // joy is active low!
         last_gfx     <= key_gfx;
-		  last_vgactrl <= key_vgactrl;		  
+		last_vgactrl <= key_vgactrl;
 
         // joystick, coin, start and service inputs are inverted
         // as indicated in the instance parameter
-        game_joystick1 <= apply_rotation(joy1_sync | key_joy1, rot_control, invert_inputs);
-        game_joystick2 <= apply_rotation(joy2_sync | key_joy2, rot_control, invert_inputs);
         
+        `ifdef SIM_INPUTS
+        game_coin  = {2{invert_inputs}} ^ sim_inputs[frame_cnt][1:0];
+        game_start = {2{invert_inputs}} ^ sim_inputs[frame_cnt][3:2];
+        game_joystick1 <= {10{invert_inputs}} ^ { 4'd0, sim_inputs[frame_cnt][9:4]};
+        `else
+        game_joystick1 <= apply_rotation(joy1_sync | key_joy1, rot_control, invert_inputs);
         game_coin      <= {2{invert_inputs}} ^ 
             ({joy2_sync[COIN_BIT],joy1_sync[COIN_BIT]} | key_coin);
         
         game_start     <= {2{invert_inputs}} ^ 
             ({joy1_sync[START2_BIT],joy1_sync[START1_BIT]} |
              {joy2_sync[START2_BIT],joy2_sync[START1_BIT]} | key_start);
-        
+        `endif
+        game_joystick2 <= apply_rotation(joy2_sync | key_joy2, rot_control, invert_inputs);
+
         soft_rst <= key_reset && !last_reset;
 
         for(cnt=0; cnt<4; cnt=cnt+1)
             if( key_gfx[cnt] && !last_gfx[cnt] ) gfx_en[cnt] <= ~gfx_en[cnt];
-		   if( key_vgactrl[0] && !last_vgactrl[0] ) vgactrl_en[0] <= ~vgactrl_en[0];
-		   if( key_vgactrl[1] && !last_vgactrl[1] ) if(vgactrl_en[3:1]<4) vgactrl_en[3:1] <= vgactrl_en[3:1]+1'b1; else vgactrl_en[3:1] <= 3'd0;
-        // state variables:
-        `ifndef ALWAYS_PAUSE
+	   if( key_vgactrl[0] && !last_vgactrl[0] ) vgactrl_en[0] <= ~vgactrl_en[0];
+	   if( key_vgactrl[1] && !last_vgactrl[1] ) vgactrl_en[1] <= ~vgactrl_en[1];
+		if( key_vgactrl[2] && !last_vgactrl[2] ) vgactrl_en[2] <= ~vgactrl_en[2];
+		if( key_vgactrl[3] && !last_vgactrl[3] ) vgactrl_en[3] <= ~vgactrl_en[3];
+ 
+	 // state variables:
+        `ifndef DIP_PAUSE
         if( (key_pause && !last_pause) || (joy_pause && !last_joypause) )
             game_pause   <= ~game_pause;
         `else 
@@ -347,6 +316,15 @@ jtframe_dip u_dip(
     .dip_fxlevel( dip_fxlevel   )
 );
 
+// This strange arrangement is what MiSTer 128MB board needs:
+wire [12:11] sdram_a;
+wire         sdram_dqml, sdram_dqmh;
+
+assign       SDRAM_DQML = sdram_a[11] | sdram_dqml;
+assign       SDRAM_DQMH = sdram_a[12] | sdram_dqmh;
+assign       SDRAM_A[11] = SDRAM_DQML;
+assign       SDRAM_A[12] = SDRAM_DQMH;
+
 jtgng_sdram u_sdram(
     .rst            ( rst           ),
     .clk            ( clk_rom       ), // 96MHz = 32 * 6 MHz -> CL=2
@@ -358,6 +336,7 @@ jtgng_sdram u_sdram(
     // ROM-load interface
     .downloading    ( downloading   ),
     .prog_we        ( prog_we       ),
+    .prog_rd        ( prog_rd       ),
     .prog_addr      ( prog_addr     ),
     .prog_data      ( prog_data     ),
     .prog_mask      ( prog_mask     ),
@@ -365,9 +344,9 @@ jtgng_sdram u_sdram(
     .sdram_ack      ( sdram_ack     ),
     // SDRAM interface
     .SDRAM_DQ       ( SDRAM_DQ      ),
-    .SDRAM_A        ( SDRAM_A       ),
-    .SDRAM_DQML     ( SDRAM_DQML    ),
-    .SDRAM_DQMH     ( SDRAM_DQMH    ),
+    .SDRAM_A        ( { sdram_a, SDRAM_A[10:0] } ),
+    .SDRAM_DQML     ( sdram_dqml    ),
+    .SDRAM_DQMH     ( sdram_dqmh    ),
     .SDRAM_nWE      ( SDRAM_nWE     ),
     .SDRAM_nCAS     ( SDRAM_nCAS    ),
     .SDRAM_nRAS     ( SDRAM_nRAS    ),
@@ -399,15 +378,39 @@ localparam ROTATE_FX=0;
 `define SCAN2X_TYPE 0
 `endif
 
-parameter SCAN2X_TYPE=`SCAN2X_TYPE;
+localparam SCAN2X_TYPE=`SCAN2X_TYPE;
 
-wire [11:0] game_rgb = {game_r, game_g, game_b };
+wire [COLORW*3-1:0] game_rgb = {game_r, game_g, game_b };
 wire hblank = ~LHBL;
 wire vblank = ~LVBL;
 
+function [7:0] extend8;
+    input [COLORW-1:0] a;
+    case( COLORW )
+        3: extend8 = { a, a, a[2:1] };
+        4: extend8 = { a, a         };
+        5: extend8 = { a, a[4:2]    };
+        6: extend8 = { a, a[5:4]    };
+        7: extend8 = { a, a[6]      };
+        8: extend8 = a;
+    endcase
+endfunction
+
+function [7:0] extend8b;    // the input width is COLORW+1
+    input [COLORW:0] a;
+    case( COLORW )
+        3: extend8b = { a, a         };
+        4: extend8b = { a, a[4:2]    };
+        5: extend8b = { a, a[5:4]    };
+        6: extend8b = { a, a[6]      };
+        7: extend8b = a;
+        8: extend8b = a[8:1];
+    endcase
+endfunction
+
 generate    
     if( ROTATE_FX ) begin
-        arcade_rotate_fx #(.WIDTH(256),.HEIGHT(224),.DW(12),.CCW(1)) 
+        arcade_rotate_fx #(.WIDTH(256),.HEIGHT(224),.DW(COLORW*3),.CCW(1)) 
         u_rotate_fx(
             .clk_video  ( clk_sys       ),
             .ce_pix     ( pxl_cen       ),
@@ -447,9 +450,9 @@ generate
     end
     else case( SCAN2X_TYPE )
         default: begin // JTFRAME easy going scaler
-            wire [11:0] rgbx2;
+            wire [COLORW*3-1:0] rgbx2;
 
-            jtframe_scan2x #(.DW(12), .HLEN(9'd384)) u_scan2x(
+            jtframe_scan2x #(.DW(COLORW*3), .HLEN(9'd384)) u_scan2x(
                 .rst_n      ( rst_n        ),
                 .clk        ( clk_sys      ),
                 .base_cen   ( pxl_cen      ),
@@ -457,13 +460,13 @@ generate
                 .base_pxl   ( game_rgb     ),
                 .x2_pxl     ( rgbx2        ),
                 .HS         ( hs           ),
-                .scanlines  ( scanlines[0] ),						 
+                .scanlines  ( scanlines[0] ),					 
                 .x2_HS      ( scan2x_hs )
             );
             assign scan2x_vs = vs;
-            assign scan2x_r     = {2{rgbx2[11:8]} };
-            assign scan2x_g     = {2{rgbx2[ 7:4]} };
-            assign scan2x_b     = {2{rgbx2[ 3:0]} };
+            assign scan2x_r     = extend8( rgbx2[COLORW*3-1:COLORW*2] );
+            assign scan2x_g     = extend8( rgbx2[COLORW*2-1:COLORW] );
+            assign scan2x_b     = extend8( rgbx2[COLORW-1:0] );
             assign scan2x_de    = ~(scan2x_vs | scan2x_hs);
             assign scan2x_cen   = pxl2_cen;
             assign scan2x_clk   = clk_sys;
@@ -478,10 +481,11 @@ generate
             assign hdmi_sl      = 2'b0;
         end
         1: begin // JTGNG_VGA, nicely scales up to 640x480
-            wire [4:0] pre_r, pre_g, pre_b;
-            wire pre_hs, pre_vs, pre_hb, pre_vb;
+            // Do not use this scaler with MiSTer
+            wire [COLORW:0] pre_r, pre_g, pre_b;
+            wire pre_hb, pre_vb;
 
-            jtgng_vga u_gngvga (
+            jtgng_vga #(COLORW) u_gngvga (
                 .clk_rgb    ( clk_sys       ),
                 .cen6       ( pxl_cen       ), //  6 MHz
                 .clk_vga    ( clk_vga       ), // 25 MHz
@@ -495,38 +499,15 @@ generate
                 .vga_red    ( pre_r         ),
                 .vga_green  ( pre_g         ),
                 .vga_blue   ( pre_b         ),
-                .vga_hsync  ( pre_hs        ),
-                .vga_vsync  ( pre_vs        )//,
-                //.vga_vb     ( pre_vb        ),
-                //.vga_hb     ( pre_hb        )
+                .vga_hsync  ( scan2x_hs     ),
+                .vga_vsync  ( scan2x_vs     ),
+                .vga_vb     ( pre_vb        ),
+                .vga_hb     ( pre_hb        )
             );
-
-            video_cleaner u_cleaner (
-                .clk_vid    ( clk_vga    ),
-                .ce_pix     ( 1'b1       ),
-
-                .R          ( { pre_r, pre_r[4:2] } ),
-                .G          ( { pre_g, pre_g[4:2] } ),
-                .B          ( { pre_b, pre_b[4:2] } ),
-
-                .HSync      ( pre_hs     ),
-                .VSync      ( pre_vs     ),
-                .HBlank     ( pre_hb     ),
-                .VBlank     ( pre_vb     ),
-
-                // video output signals
-                .VGA_R      ( scan2x_r   ),
-                .VGA_G      ( scan2x_g   ),
-                .VGA_B      ( scan2x_b   ),
-                .VGA_VS     ( scan2x_vs  ),
-                .VGA_HS     ( scan2x_hs  ),
-                .VGA_DE     ( scan2x_de  ),
-                
-                // optional aligned blank
-                .HBlank_out (          ),
-                .VBlank_out (          )
-            );
-
+            assign scan2x_r      = extend8b( pre_r );
+            assign scan2x_g      = extend8b( pre_g );
+            assign scan2x_b      = extend8b( pre_b );
+            assign scan2x_de     = !pre_vb && !pre_hb;
             assign scan2x_cen    = 1'b1;
             assign scan2x_clk    = clk_vga;
             assign hdmi_clk      = scan2x_clk;
@@ -550,17 +531,23 @@ generate
                     3'd4:    sl <= 2'd3;
                 endcase // scanlines
             wire [1:0] nc_r, nc_g, nc_b;
-            video_mixer #(.LINE_LENGTH(256), .HALF_DEPTH(1)) u_video_mixer
-            (
+            localparam HALF_DEPTH = COLORW==4;
+            wire [ (HALF_DEPTH?3:7):0 ] mr_mixer_r = extend8( game_r );
+            wire [ (HALF_DEPTH?3:7):0 ] mr_mixer_g = extend8( game_g );
+            wire [ (HALF_DEPTH?3:7):0 ] mr_mixer_b = extend8( game_b );
+            video_mixer #(
+                .LINE_LENGTH(256),
+                .HALF_DEPTH(HALF_DEPTH)) 
+            u_video_mixer (
                 .clk_sys        ( clk_sys       ),
                 .ce_pix         ( pxl_cen       ),
                 .ce_pix_out     ( scan2x_cen    ),
                 .scandoubler    ( ~scan2x_enb   ),        
                 .scanlines      ( sl            ),
                 .hq2x           ( hq2x_en       ),
-                .R              ( game_r        ),
-                .G              ( game_g        ),
-                .B              ( game_b        ),
+                .R              ( mr_mixer_r    ),
+                .G              ( mr_mixer_g    ),
+                .B              ( mr_mixer_b    ),
                 .mono           ( 1'b0          ),
                 .HSync          ( hs            ),
                 .VSync          ( vs            ),
