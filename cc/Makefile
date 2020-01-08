@@ -30,7 +30,6 @@ WaveWritter.o: WaveWritter.cpp
 $(BUILDDIR)/raw2wav : raw2wav.cc WaveWritter.o
 	$(CXX) -o $@ raw2wav.cc WaveWritter.o
 
-
 clean:
 	rm -f *.o $(PROGRAMS)
 
