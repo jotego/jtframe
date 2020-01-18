@@ -1,9 +1,9 @@
 module joy_db9 
 (
  input  clk,      //Reloj de Entrada sobre 48-50Mhz
- input  JOY_CLK,
+ output JOY_CLK,
+ output JOY_LOAD,   
  input  JOY_DATA, 
- output JOY_LOAD,  
  output reg [15:0] joystick1,
  output reg [15:0] joystick2
 );
@@ -47,7 +47,7 @@ always @(posedge JOY_CLK) begin
 				5'd13 : joy2[3]  <= JOY_DATA; //2p Arriba
     endcase              
 end
-always @(posedge clk_sys) begin
+always @(posedge clk) begin
 `ifndef JOY_GUNSMOKE
     joystick1[15:0] <=  ~joy1;
     joystick2[15:0] <=  ~joy2;
