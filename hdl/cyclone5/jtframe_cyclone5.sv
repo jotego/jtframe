@@ -23,7 +23,9 @@ module jtframe_cyclone5 #(parameter
     THREE_BUTTONS          = 1'b0,
     GAME_INPUTS_ACTIVE_LOW = 1'b1,
     CONF_STR               = "",
-    COLORW                 = 4
+    COLORW                 = 4,
+    VIDEO_WIDTH            = 384,
+    VIDEO_HEIGHT           = 224
 )(
     input           clk_sys,
     input           clk_rom,
@@ -103,9 +105,13 @@ module jtframe_cyclone5 #(parameter
     output          game_pause,
     output          game_service,
     // DIP and OSD settings
-    input  wire [ 1:0]  BTN,
+    output  [ 7:0]  hdmi_arx,
+    output  [ 7:0]  hdmi_ary,
+    output          vertical_n,
+
     output          enable_fm,
     output          enable_psg,
+
     output          dip_test,
     // non standard:
     output          dip_pause,
@@ -118,6 +124,7 @@ module jtframe_cyclone5 #(parameter
     output	wire		  JOY_LOAD,
     input  wire			  JOY_DATA,
     // Debug
+    input  wire [ 1:0]  BTN,
     output          LED,
     output   [3:0]  gfx_en
 );
@@ -134,11 +141,11 @@ wire [3:0]    vgactrl_en;
 
 ///////////////// LED is on while
 // downloading, PLL lock lost, OSD is shown or in reset state
-assign LED = ~( downloading | dwnld_busy | ~pll_locked | osd_shown | rst );
+assign LED = ~( downloading | dwnld_busy | ~pll_locked | osd_shown | rst | (|(~gfx_en)));
 wire  [ 1:0]  rotate;
 
 
-jtgng_cyclone5_base #(
+jtframe_cyclone5_base #(
     .CONF_STR    (CONF_STR          ),
     .CONF_STR_LEN($size(CONF_STR)/8 ),
     .SIGNED_SND  (SIGNED_SND        ),
@@ -167,7 +174,7 @@ jtgng_cyclone5_base #(
     .scan2x_hs      ( scan2x_hs     ),
     .scan2x_vs      ( scan2x_vs     ),
     .scan2x_enb     ( scan2x_enb    ),
-	.vgactrl_en     ( vgactrl_en    ),	
+	.vgactrl_en     ( vgactrl_en    ),		
     // MiST VGA pins (includes OSD)
     .VIDEO_R        ( VGA_R         ),
     .VIDEO_G        ( VGA_G         ),
@@ -186,7 +193,7 @@ jtgng_cyclone5_base #(
     .joystick2      ( joystick2     ),
     .JOY_CLK        ( JOY_CLK       ),
     .JOY_LOAD       ( JOY_LOAD      ),
-	.JOY_DATA       ( JOY_DATA      ),	
+	.JOY_DATA       ( JOY_DATA      ),		
     // audio
     .clk_dac        ( clk_sys       ),
     .snd_left       ( snd_left      ),
@@ -203,7 +210,9 @@ jtgng_cyclone5_base #(
 jtframe_board #(
     .THREE_BUTTONS         ( THREE_BUTTONS         ),
     .GAME_INPUTS_ACTIVE_LOW( GAME_INPUTS_ACTIVE_LOW),
-    .COLORW                ( COLORW                )
+    .COLORW                ( COLORW                ),
+    .VIDEO_WIDTH           ( VIDEO_WIDTH           ),
+    .VIDEO_HEIGHT          ( VIDEO_HEIGHT          )
 ) u_board(
     .rst            ( rst             ),
     .rst_n          ( rst_n           ),
@@ -277,9 +286,24 @@ jtframe_board #(
     .scan2x_hs      ( scan2x_hs       ),
     .scan2x_vs      ( scan2x_vs       ),
     .scan2x_enb     ( scan2x_enb      ),
-	.vgactrl_en     ( vgactrl_en      ),
+	.vgactrl_en     ( vgactrl_en      ),	
     // Debug
-    .gfx_en         ( gfx_en          )
+    .gfx_en         ( gfx_en          ),
+    // Unused ports (MiSTer)
+    .hdmi_arx       (                 ),
+    .hdmi_ary       (                 ),
+    .hdmi_clk       (                 ),
+    .hdmi_cen       (                 ),
+    .hdmi_r         (                 ),
+    .hdmi_g         (                 ),
+    .hdmi_b         (                 ),
+    .hdmi_hs        (                 ),
+    .hdmi_vs        (                 ),
+    .hdmi_de        (                 ),
+    .hdmi_sl        (                 ),
+    .scan2x_clk     (                 ),
+    .scan2x_cen     (                 ),
+    .scan2x_de      (                 )
 );
 
 endmodule // jtframe

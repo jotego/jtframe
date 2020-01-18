@@ -18,7 +18,7 @@
 
 `timescale 1ns/1ps
 
-module jtgng_unamiga_base #(parameter
+module jtframe_unamiga_base #(parameter
     CONF_STR        = "CORE",
     CONF_STR_LEN    = 4,
     SIGNED_SND      = 1'b0,

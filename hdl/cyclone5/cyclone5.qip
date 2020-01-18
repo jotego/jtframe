@@ -1,0 +1,33 @@
+set_global_assignment -name SYSTEMVERILOG_FILE [file join $::quartus(qip_path) jtframe_cyclone5_top.sv      ]
+set_global_assignment -name SYSTEMVERILOG_FILE [file join $::quartus(qip_path) jtframe_cyclone5.sv          ]
+set_global_assignment -name VERILOG_FILE       [file join $::quartus(qip_path) jtframe_cyclone5_base.v      ]
+set_global_assignment -name VERILOG_FILE       [file join $::quartus(qip_path) jtframe_board.v              ]
+set_global_assignment -name VERILOG_FILE       [file join $::quartus(qip_path) jtframe_keyboard.v           ]
+set_global_assignment -name VERILOG_FILE       [file join $::quartus(qip_path) jtframe_joydb9.v             ]
+set_global_assignment -name VHDL_FILE          [file join $::quartus(qip_path) CtrlModule/CtrlModule.vhd           ]
+set_global_assignment -name VHDL_FILE          [file join $::quartus(qip_path) CtrlModule/interrupt_controller.vhd ]
+set_global_assignment -name VHDL_FILE          [file join $::quartus(qip_path) CtrlModule/spi.vhd                  ]
+set_global_assignment -name VHDL_FILE          [file join $::quartus(qip_path) CtrlModule/zpu_core_flex.vhd        ]
+set_global_assignment -name VHDL_FILE          [file join $::quartus(qip_path) CtrlModule/zpupkg.vhd               ]
+
+set_global_assignment -name QIP_FILE           [file join $::quartus(qip_path) ../mister/sys/pll.qip        ]
+
+set_global_assignment -name SYSTEMVERILOG_FILE [file join $::quartus(qip_path) ../mist/rgb2ypbpr.sv                 ]
+set_global_assignment -name VHDL_FILE          [file join $::quartus(qip_path) ../keyboard/ps2_intf.vhd     ]
+set_global_assignment -name VERILOG_FILE       [file join $::quartus(qip_path) ../sound/hybrid_pwm_sd.v     ]
+set_global_assignment -name VERILOG_FILE       [file join $::quartus(qip_path) ../sound/hifi_1bit_dac.v     ]
+set_global_assignment -name VERILOG_FILE       [file join $::quartus(qip_path) ../sdram/jtframe_sdram.v       ]
+set_global_assignment -name VERILOG_FILE       [file join $::quartus(qip_path) ../ram/jtframe_dual_clk_ram.v  ]
+
+set_global_assignment -name VERILOG_FILE       [file join $::quartus(qip_path) ../jtframe_dip.v             ]
+
+# Scan doubler from MiSTer
+set_global_assignment -name SYSTEMVERILOG_FILE [file join $::quartus(qip_path) ../mister/sys/video_mixer.sv ]
+set_global_assignment -name SYSTEMVERILOG_FILE [file join $::quartus(qip_path) ../mister/sys/video_cleaner.sv ]
+set_global_assignment -name SYSTEMVERILOG_FILE [file join $::quartus(qip_path) ../mister/sys/hq2x.sv        ]
+set_global_assignment -name VERILOG_FILE       [file join $::quartus(qip_path) ../mister/sys/scandoubler.v  ]
+
+set_global_assignment -name VERILOG_FILE       [file join $::quartus(qip_path) ../video/jtgng_vga.v         ]
+set_global_assignment -name VERILOG_FILE       [file join $::quartus(qip_path) ../video/jtgng_vgapxl.v      ]
+set_global_assignment -name VERILOG_FILE       [file join $::quartus(qip_path) ../video/jtframe_scan2xsl.v    ]
+set_global_assignment -name VERILOG_FILE       [file join $::quartus(qip_path) ../ram/jtframe_dual_clk_ram.v  ]
