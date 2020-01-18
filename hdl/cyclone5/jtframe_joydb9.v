@@ -25,7 +25,7 @@ always @(posedge JOY_CLK) begin
     end else begin
        joy_renew = 1'b1;
     end
-    if (joy_count == 5'd25) begin
+    if (joy_count == 5'd14) begin
       joy_count = 5'd0;
     end else begin
       joy_count = joy_count + 1'd1;
