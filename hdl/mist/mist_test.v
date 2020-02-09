@@ -9,7 +9,7 @@ wire VGA_HS, VGA_VS;
 wire led;
 
 wire            downloading;
-wire    [21:0]  ioctl_addr;
+wire    [22:0]  ioctl_addr;
 wire    [ 7:0]  ioctl_data;
 wire clk27, rst;
 wire [21:0]  sdram_addr;
@@ -25,10 +25,10 @@ wire SDRAM_DQML, SDRAM_DQMH, SDRAM_nWE,  SDRAM_nCAS,
 wire [5:0] VGA_R, VGA_G, VGA_B;
 // the pxl_ wires represent the core pure output
 // regardless of the scan doubler or the composity sync
-wire pxl_clk, pxl_cen, pxl_vs, pxl_hs;
+wire pxl_clk, pxl_cen, pxl_vb, pxl_hb;
 
 mist_dump u_dump(
-    .VGA_VS     ( pxl_vs    ),
+    .VGA_VS     ( pxl_vb    ),
     .led        ( led       ),
     .frame_cnt  ( frame_cnt )
 );
@@ -39,8 +39,8 @@ test_harness #(.sdram_instance(0),.GAME_ROMNAME(`GAME_ROM_PATH),
     .clk27       ( clk27         ),
     .pxl_clk     ( pxl_clk       ),
     .pxl_cen     ( pxl_cen       ),
-    .pxl_vs      ( pxl_vs        ),
-    .pxl_hs      ( pxl_hs        ),
+    .pxl_vb      ( pxl_vb        ),
+    .pxl_hb      ( pxl_hb        ),
     .downloading ( downloading   ),
     .dwnld_busy  ( ~led          ), // LED is set low during downloading
         // the downloading process can extend pass the downloading signal
@@ -54,8 +54,8 @@ test_harness #(.sdram_instance(0),.GAME_ROMNAME(`GAME_ROM_PATH),
     .SPI_DO      ( SPI_DO        ),
     .CONF_DATA0  ( CONF_DATA0    ),
     // Video dumping. VGA_ signals are equal to game signals in simulation.
-    .HS          ( VGA_HS    ),
-    .VS          ( VGA_VS    ),
+    .HS          ( pxl_hb    ),
+    .VS          ( pxl_vb    ),
     .red         ( VGA_R[5:2]),
     .green       ( VGA_G[5:2]),
     .blue        ( VGA_B[5:2]),
@@ -126,8 +126,8 @@ wire AUDIO_L, AUDIO_R;
     .LED        ( led       ),
     .sim_pxl_cen( pxl_cen   ),
     .sim_pxl_clk( pxl_clk   ),
-    .sim_vs     ( pxl_vs    ),
-    .sim_hs     ( pxl_hs    )
+    .sim_vb     ( pxl_vb    ),
+    .sim_hb     ( pxl_hb    )
 );
 
 

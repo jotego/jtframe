@@ -20,18 +20,18 @@ module gamma_corr
 );
 
 (* ramstyle="no_rw_check" *) reg [7:0] gamma_curve[768];
+reg [9:0] gamma_index;
+reg [7:0] gamma;
 
 always @(posedge clk_sys) if (gamma_wr) gamma_curve[gamma_wr_addr] <= gamma_value;
 always @(posedge clk_vid) gamma <= gamma_curve[gamma_index];
 
-reg [9:0] gamma_index;
-reg [7:0] gamma;
 
 always @(posedge clk_vid) begin
 	reg [7:0] R_in, G_in, B_in;
 	reg [7:0] R_gamma, G_gamma;
 	reg       hs,vs,hb,vb;
-	reg [1:0] ctr = 0;
+	static reg [1:0] ctr = 0;
 
 	if(ce_pix) begin
 		{R_in,G_in,B_in} <= RGB_in;

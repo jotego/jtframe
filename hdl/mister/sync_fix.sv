@@ -6,9 +6,9 @@ module sync_fix
     output sync_out
 );
 
+reg pol;
 assign sync_out = sync_in ^ pol;
 
-reg pol;
 always @(posedge clk) begin
     integer pos = 0, neg = 0, cnt = 0;
     reg s1,s2;

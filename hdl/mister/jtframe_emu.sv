@@ -104,8 +104,8 @@ module emu
     `ifdef SIMULATION
     ,output         sim_pxl_cen,
     output          sim_pxl_clk,
-    output          sim_vs,
-    output          sim_hs
+    output          sim_vb,
+    output          sim_hb
     `endif
 );
 
@@ -213,7 +213,7 @@ wire       enable_fm, enable_psg;
 wire       dip_pause, dip_flip, dip_test;
 
 wire        ioctl_wr;
-wire [21:0] ioctl_addr;
+wire [22:0] ioctl_addr;
 wire [ 7:0] ioctl_data;
 
 wire [ 9:0] game_joy1, game_joy2;
@@ -235,6 +235,16 @@ wire [21:0]  sdram_addr;
 wire         data_rdy;
 wire         sdram_ack;
 wire         refresh_en;
+
+wire [ 1:0]   sdram_wrmask;
+wire          sdram_rnw;
+wire [15:0]   data_write;
+
+`ifndef JTFRAME_WRITEBACK
+assign sdram_wrmask = 2'b11;
+assign sdram_rnw    = 1'b1;
+assign data_write   = 16'h00;
+`endif
 
 wire         prog_we, prog_rd;
 wire [21:0]  prog_addr;
@@ -322,6 +332,10 @@ u_frame(
     .data_read      ( data_read      ),
     .data_rdy       ( data_rdy       ),
     .refresh_en     ( refresh_en     ),
+    // write support
+    .sdram_wrmask   ( sdram_wrmask   ),
+    .sdram_rnw      ( sdram_rnw      ),
+    .data_write     ( data_write     ),
 //////////// board
     .rst            ( rst            ),
     .rst_n          ( rst_n          ), // unused
@@ -375,8 +389,8 @@ u_frame(
 );
 
 `ifdef SIMULATION
-assign sim_hs = hs;
-assign sim_vs = vs;
+assign sim_hb = ~LHBL_dly;
+assign sim_vb = ~LVBL_dly;
 assign sim_pxl_clk = clk_sys;
 assign sim_pxl_cen = pxl_cen;
 `endif
@@ -416,7 +430,7 @@ assign sim_pxl_cen = pxl_cen;
     .enable_fm    ( enable_fm        ),
     .enable_psg   ( enable_psg       ),
     // PROM programming
-    .ioctl_addr   ( ioctl_addr[21:0] ),
+    .ioctl_addr   ( ioctl_addr       ),
     .ioctl_data   ( ioctl_data       ),
     .ioctl_wr     ( ioctl_wr         ),
     .prog_addr    ( prog_addr        ),
@@ -434,6 +448,11 @@ assign sim_pxl_cen = pxl_cen;
     .sdram_ack    ( sdram_ack        ),
     .data_rdy     ( data_rdy         ),
     .refresh_en   ( refresh_en       ),
+    `ifdef JTFRAME_WRITEBACK
+    .sdram_wrmask ( sdram_wrmask     ),
+    .sdram_rnw    ( sdram_rnw        ),
+    .data_write   ( data_write       ),
+    `endif
 
     // DIP switches
     .status       ( status           ),

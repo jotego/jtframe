@@ -18,10 +18,11 @@
 
 `timescale 1ns/1ps
 
-module jtframe_romrq #(parameter AW=18, DW=8, OFFSET=22'd0 )(
+module jtframe_romrq #(parameter AW=18, DW=8 )(
     input               rst,
     input               clk,
     input               cen,
+    input [21:0]        offset,
     input [AW-1:0]      addr,
     input               addr_ok,    // signals that value in addr is valid
     input [31:0]        din,
@@ -45,7 +46,7 @@ reg init;
 reg hit0, hit1;
 
 wire  [21:0] size_ext = { {22-AW{1'b0}}, addr_req };
-assign sdram_addr = (DW==8?(size_ext>>1):size_ext ) + OFFSET;
+assign sdram_addr = (DW==8?(size_ext>>1):size_ext ) + offset;
 
 always @(*) begin
     case(DW)

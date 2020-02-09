@@ -24,7 +24,7 @@ module hps_io #(parameter STRLEN=0, PS2DIV=2000, WIDE=0, VDNUM=1, PS2WE=0,
 
     output      [1:0] buttons,
     output            forced_scandoubler,
-    output            direct_video=0,
+    output            direct_video,
 
     output     [31:0] status,
     // input      [31:0] status_in,
@@ -60,9 +60,9 @@ module hps_io #(parameter STRLEN=0, PS2DIV=2000, WIDE=0, VDNUM=1, PS2WE=0,
     // ARM -> FPGA download
     output            ioctl_download, // signal indicating an active download
     output      [7:0] ioctl_index,        // menu index used to upload the file
-    output            ioctl_wr,
-    output     [24:0] ioctl_addr,         // in WIDE mode address will be incremented by 2
-    output     [DW:0] ioctl_dout,
+    (*keep*) output            ioctl_wr,
+    (*keep*) output     [24:0] ioctl_addr,         // in WIDE mode address will be incremented by 2
+    (*keep*) output     [DW:0] ioctl_dout,
     output     [31:0] ioctl_file_ext,
     // input             ioctl_wait,
 
@@ -120,5 +120,7 @@ assign status = 32'd0;
 assign forced_scandoubler = 1'b0;
 
 assign buttons = 2'b0;
+
+assign direct_video = 1'b0;
 
 endmodule // hps_io

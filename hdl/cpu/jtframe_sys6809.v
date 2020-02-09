@@ -43,12 +43,11 @@ module jtframe_sys6809(
     input   [7:0]   cpu_din
 );
 
+// cen generation
 wire E, Q;
 reg  cen_E, cen_Q;
 assign cpu_cen = Q;
-wire ram_we = ram_cs & ~RnW;
 
-parameter RAM_AW=12;
 
 reg [1:0] cencnt=2'd0;
 
@@ -59,6 +58,10 @@ always @(posedge clk) begin
     cen_E  <= cencnt==2'b00 & cen;
     cen_Q  <= cencnt==2'b10 & cen;
 end
+
+// RAM
+parameter RAM_AW=12;
+wire ram_we = ram_cs & ~RnW;
 
 jtframe_ram #(.aw(RAM_AW)) u_ram(
     .clk    ( clk         ),

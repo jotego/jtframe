@@ -22,7 +22,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-module data_io #(parameter aw=22)(
+module data_io(
     // io controller spi interface
     input         sck,
     input         ss,
@@ -34,8 +34,8 @@ module data_io #(parameter aw=22)(
     input               rst,
     input               clk_sdram,
     output reg          downloading_sdram,   // signal indicating an active download
-    output reg [aw-1:0] ioctl_addr,
-    output reg [ 7:0]   ioctl_data,
+    output reg   [22:0] ioctl_addr,
+    output reg   [ 7:0] ioctl_data,
     output reg          ioctl_wr
 );
 
@@ -107,13 +107,13 @@ reg sync_aux;
 
 always@(posedge clk_sdram or posedge rst)
     if( rst ) begin
-        ioctl_addr <= {aw{1'b1}};
+        ioctl_addr <= ~23'd0;
         ioctl_wr   <= 1'b0;
         ioctl_data <= 8'h0;
     end else begin
         { downloading_sdram, sync_aux } <= { sync_aux, downloading_reg };
         if ({ downloading_sdram, sync_aux } == 2'b01) begin
-            ioctl_addr <= ~{aw{1'b0}};
+            ioctl_addr <= ~23'd0;
             ioctl_wr   <= 1'b0;
         end
 

@@ -39,7 +39,8 @@
 
 `timescale 1ns / 1ps
 
-module mt48lc16m16a2 (Dq, Addr, Ba, Clk, Cke, Cs_n, Ras_n, Cas_n, We_n, Dqm, downloading);
+module mt48lc16m16a2 (Dq, Addr, Ba, Clk, Cke, Cs_n, Ras_n, Cas_n, We_n, Dqm, 
+    downloading, VS, frame_cnt );
 
     parameter addr_bits =      13;
     parameter data_bits =      16;
@@ -59,6 +60,8 @@ module mt48lc16m16a2 (Dq, Addr, Ba, Clk, Cke, Cs_n, Ras_n, Cas_n, We_n, Dqm, dow
     input                         We_n;
     input                 [1 : 0] Dqm;
     input                         downloading;
+    input                         VS;
+    input     [31:0]              frame_cnt;
 
     reg       [data_bits - 1 : 0] Bank0 [0 : mem_sizes];
     reg       [data_bits - 1 : 0] Bank1 [0 : mem_sizes];
@@ -128,6 +131,24 @@ module mt48lc16m16a2 (Dq, Addr, Ba, Clk, Cke, Cs_n, Ras_n, Cas_n, We_n, Dqm, dow
         `endif
     `endif
 
+    `ifdef JTFRAME_SAVESDRAM
+
+        initial begin
+            $display("INFO: SDRAM memory will be dumped at the end of each frame in file sdram_last.hex");
+        end
+        always @(negedge VS)
+        `ifdef DUMP_START
+        if( frame_cnt==`DUMP_START )
+        `endif
+        begin : dump_contents_frame
+            integer dumpcnt,f;
+            f=$fopen("sdram_last.hex","w");
+            for( dumpcnt=0; dumpcnt<4096*1024; dumpcnt=dumpcnt+1)
+                $fwrite(f,"%h\n",Bank0[dumpcnt]);
+            $fclose(f);
+        end
+    `endif
+
     reg                   [1 : 0] Bank_addr [0 : 3];                // Bank Address Pipeline
     reg        [col_bits - 1 : 0] Col_addr [0 : 3];                 // Column Address Pipeline
     reg                   [3 : 0] Command [0 : 3];                  // Command Operation Pipeline
@@ -185,8 +206,14 @@ module mt48lc16m16a2 (Dq, Addr, Ba, Clk, Cke, Cs_n, Ras_n, Cas_n, We_n, Dqm, dow
     // Write Burst Mode
     wire      Write_burst_mode = Mode_reg[9];
 
-    wire      Debug            = 1'b0;                          // Debug messages : 1 = On
+    wire      Debug; // Debug messages : 1 = On, see JTFRAME_SDRAM_DEBUG below
     wire      Dq_chk           = Sys_clk & Data_in_enable;      // Check setup/hold time for DQ
+
+    `ifdef JTFRAME_SDRAM_DEBUG
+    assign Debug=1;
+    `else 
+    assign Debug=0;
+    `endif
 
     // Added x ns delay for MiST
     localparam tMiST = 0;

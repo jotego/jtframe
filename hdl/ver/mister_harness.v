@@ -14,7 +14,9 @@ module mister_harness(
     input  [7:0]       VGA_G,
     input  [7:0]       VGA_B,
     input              VGA_HS,
-    input              VGA_VS,    
+    input              VGA_VS,
+    input              VGA_VB,
+    input              VGA_HB,
     // SDRAM
     input              dwnld_busy,
     inout [15:0]       SDRAM_DQ,
@@ -83,7 +85,8 @@ wire [15:0] video_dump = { 2'b0, VGA_VS, VGA_HS, VGA_R[7:4], VGA_G[7:4], VGA_B[7
 `define VIDEO_START 0
 `endif
 
-always @(posedge VGA_CLK) if(VGA_CE && frame_cnt>=`VIDEO_START ) begin
+always @(posedge VGA_CLK) if(VGA_CE && frame_cnt>=`VIDEO_START )
+    if( !VGA_VB && !VGA_HB) begin
     $fwrite(fvideo,"%u", video_dump);
 end
 

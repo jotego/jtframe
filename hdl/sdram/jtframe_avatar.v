@@ -42,7 +42,7 @@ module jtframe_avatar #(parameter AW=13)(
         .clk    ( clk            ),
         .cen    ( pause          ),  // tiny power saving when not in pause
         .data   ( 16'd0          ),
-        .addr   ( obj_addr[12:0] ),
+        .addr   ( obj_addr       ),
         .we     ( 1'b0           ),
         .q      ( avatar_data    )
     );

@@ -12,8 +12,8 @@ module test_harness(
     output  reg      clk27,
     input            pxl_cen,
     input            pxl_clk, 
-    input            pxl_vs,
-    input            pxl_hs,
+    input            pxl_vb,
+    input            pxl_hb,
     input   [21:0]   sdram_addr,
     output  [15:0]   data_read,
     output           loop_rst,
@@ -21,7 +21,7 @@ module test_harness(
     input            H0,
     output           downloading,
     input            dwnld_busy,
-    output    [21:0] ioctl_addr,
+    output    [22:0] ioctl_addr,
     output    [ 7:0] ioctl_data,
     output           ioctl_wr,
     // Video dumping
@@ -57,14 +57,19 @@ parameter TX_LEN = 207;
 
 ////////////////////////////////////////////////////////////////////
 // video output dump
+// this is a binary bile with 32 bits per pixel. First 8 bits are the alpha, and set to 0xFF
+// The rest are RGB in 8-bit format
+// There is no dump while blanking. The inputs pxl_hb and pxl_vb are high during blanking
+// The linux tool "convert" can process the raw stream and separate it into individual frames
+// automatically
 
 `ifdef DUMP_VIDEO
 integer fvideo;
 initial begin
-    fvideo = $fopen("video.bin","wb");
+    fvideo = $fopen("video.raw","wb");
 end
 
-wire [15:0] video_dump = { 2'b0,pxl_vs,pxl_hs, red, green, blue  };
+wire [31:0] video_dump = { 8'hff, {2{red}}, {2{green}}, {2{blue}} };
 
 // Define VIDEO_START with the first frame number for which
 // video will be dumped. If undefined, it will start from frame 0
@@ -73,21 +78,21 @@ wire [15:0] video_dump = { 2'b0,pxl_vs,pxl_hs, red, green, blue  };
 `endif
 
 always @(posedge pxl_clk) if(pxl_cen && frame_cnt>=`VIDEO_START && !downloading) begin
-    $fwrite(fvideo,"%u", video_dump);
+    if( !pxl_hb && !pxl_vb ) $fwrite(fvideo,"%u", video_dump);
 end
 
 `endif
 
 ////////////////////////////////////////////////////////////////////
 initial frame_cnt=0;
-always @(posedge pxl_vs ) begin
+always @(posedge pxl_vb ) begin
     frame_cnt<=frame_cnt+1;
     $display("New frame %d", frame_cnt);
 end
 
 `ifdef MAXFRAME
 reg frames_done=1'b0;
-always @(negedge pxl_vs)
+always @(negedge pxl_vb)
     if( frame_cnt == `MAXFRAME ) frames_done <= 1'b1;
 `else
 reg frames_done=1'b1;
@@ -203,7 +208,9 @@ mt48lc16m16a2 #(.filename(GAME_ROMNAME)) mist_sdram (
     .Cas_n      ( SDRAM_nCAS    ),
     .We_n       ( SDRAM_nWE     ),
     .Dqm        ( {SDRAM_DQMH,SDRAM_DQML}   ),
-    .downloading( dwnld_busy    )
+    .downloading( dwnld_busy    ),
+    .VS         ( VS            ),
+    .frame_cnt  ( frame_cnt     )
 );
 `endif
 
@@ -221,7 +228,7 @@ spitx #(.filename(GAME_ROMNAME), .TX_LEN(TX_LEN) )
     .spi_done   ( spi_done   )
 );
 
-data_io #(.aw(22)) datain (
+data_io datain (
     .sck        (SPI_SCK      ),
     .ss         (SPI_SS2      ),
     .sdi        (SPI_DI       ),

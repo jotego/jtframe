@@ -35,7 +35,7 @@ wire        VGA_CE;
 wire  [7:0] VGA_R;
 wire  [7:0] VGA_G;
 wire  [7:0] VGA_B;
-wire        VGA_DE;
+wire        VGA_DE, VGA_HB, VGA_VB;
 
 // HDMI signals are basically ignored in this simulation
 wire        HDMI_CLK;
@@ -52,7 +52,7 @@ wire  [7:0] HDMI_ARY;
 
 // the pxl_ wires represent the core pure output
 // regardless of the scan doubler or the composity sync
-wire pxl_clk, pxl_cen, pxl_vs, pxl_hs;
+wire pxl_clk, pxl_cen;
 
 
 mister_dump u_dump(
@@ -77,6 +77,8 @@ mister_harness #(.sdram_instance(0),.GAME_ROMNAME(`GAME_ROM_PATH),
     .VGA_B       ( VGA_B     ),
     .VGA_HS      ( VGA_HS    ),
     .VGA_VS      ( VGA_VS    ),
+    .VGA_HB      ( VGA_HB    ),
+    .VGA_VB      ( VGA_VB    ),
     // SDRAM
     .SDRAM_DQ    ( SDRAM_DQ  ),
     .SDRAM_A     ( SDRAM_A   ),
@@ -147,8 +149,8 @@ emu UUT(
     // Video output for simulation
     .sim_pxl_cen( pxl_cen       ),
     .sim_pxl_clk( pxl_clk       ),
-    .sim_vs     ( pxl_vs        ),
-    .sim_hs     ( pxl_hs        )    
+    .sim_vb     ( VGA_VB        ),
+    .sim_hb     ( VGA_HB        )    
 );
 
 endmodule

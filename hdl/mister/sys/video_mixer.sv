@@ -25,7 +25,9 @@ module video_mixer
 #(
 	parameter LINE_LENGTH  = 768,
 	parameter HALF_DEPTH   = 0,
-	parameter GAMMA        = 0
+	parameter GAMMA        = 0,
+    // do not modify these ones
+    parameter DWIDTH = HALF_DEPTH ? 3 : 7
 )
 (
 	// video clock
@@ -69,19 +71,20 @@ module video_mixer
 	output reg       VGA_DE
 );
 
-localparam DWIDTH = HALF_DEPTH ? 3 : 7;
 localparam DWIDTH_SD = GAMMA ? 7 : DWIDTH;
 localparam HALF_DEPTH_SD = GAMMA ? 0 : HALF_DEPTH;
+localparam RGB_WIDTH = GAMMA && HALF_DEPTH ? 8 : DWIDTH;
+wire [RGB_WIDTH-1:0] R_in, G_in, B_in;
 
 generate
 	if(GAMMA && HALF_DEPTH) begin
-		wire [7:0] R_in  = mono ? {G,R} : {R,R};
-		wire [7:0] G_in  = mono ? {G,R} : {G,G};
-		wire [7:0] B_in  = mono ? {G,R} : {B,B};
+		assign R_in  = mono ? {G,R} : {R,R};
+		assign G_in  = mono ? {G,R} : {G,G};
+		assign B_in  = mono ? {G,R} : {B,B};
 	end else begin
-		wire [DWIDTH:0] R_in  = R;
-		wire [DWIDTH:0] G_in  = G;
-		wire [DWIDTH:0] B_in  = B;
+		assign R_in  = R;
+		assign G_in  = G;
+		assign B_in  = B;
 	end
 endgenerate
 
@@ -89,6 +92,7 @@ endgenerate
 wire hs_g, vs_g;
 wire hb_g, vb_g;
 wire [DWIDTH_SD:0] R_gamma, G_gamma, B_gamma;
+wire [7:0] r,g,b;
 
 generate
 	if(GAMMA) begin
@@ -155,13 +159,13 @@ wire [DWIDTH_SD:0] bt  = (scandoubler ? B_sd : B_gamma);
 
 generate
 	if(!GAMMA && HALF_DEPTH) begin
-		wire [7:0] r  = mono ? {gt,rt} : {rt,rt};
-		wire [7:0] g  = mono ? {gt,rt} : {gt,gt};
-		wire [7:0] b  = mono ? {gt,rt} : {bt,bt};
+		assign r  = mono ? {gt,rt} : {rt,rt};
+		assign g  = mono ? {gt,rt} : {gt,gt};
+		assign b  = mono ? {gt,rt} : {bt,bt};
 	end else begin
-		wire [7:0] r  = rt;
-		wire [7:0] g  = gt;
-		wire [7:0] b  = bt;
+		assign r  = rt;
+		assign g  = gt;
+		assign b  = bt;
 	end
 endgenerate
 

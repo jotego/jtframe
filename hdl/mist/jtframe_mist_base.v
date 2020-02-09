@@ -75,7 +75,7 @@ module jtframe_mist_base #(parameter
     output          snd_pwm_left,
     output          snd_pwm_right,
     // ROM load from SPI
-    output [21:0]   ioctl_addr,
+    output [22:0]   ioctl_addr,
     output [ 7:0]   ioctl_data,
     output          ioctl_wr,
     output          downloading
@@ -163,7 +163,7 @@ assign scan2x_enb = `SCANDOUBLER_DISABLE;
 assign ypbpr = 1'b0;
 `endif
 
-data_io #(.aw(22)) u_datain (
+data_io u_datain (
     .sck                ( SPI_SCK      ),
     .ss                 ( SPI_SS2      ),
     .sdi                ( SPI_DI       ),

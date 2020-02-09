@@ -22,6 +22,7 @@
 module jtframe_cen48(
     input   clk,    // 48 MHz
     output  reg cen12,
+    output  reg cen16,
     output  reg cen8,
     output  reg cen6,
     output  reg cen4,
@@ -49,6 +50,7 @@ end
 always @(posedge clk) begin
     cen12  <= cencnt[1:0] == 2'd0;
     cen12b <= cencnt[1:0] == 2'd2;
+    cen16  <= cencnt6 == 3'd0 || cencnt6 == 3'd3;
     cen8   <= cencnt6     == 3'd0;
     cen4   <= cencnt6     == 3'd0 && cencnt12;
     cen6   <= cencnt[2:0] == 3'd0;

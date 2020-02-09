@@ -130,6 +130,11 @@ if [ "$YM2151" = 1 ]; then
     PERCORE="$PERCORE $(add_dir $MODULES/jt51/hdl jt51.f)"
 fi
 
+if [ "$MSM6295" = 1 ]; then
+    echo "INFO: MSM6295 support added."
+    PERCORE="$PERCORE $(add_dir $MODULES/jt6295/hdl jt6295.f)"
+fi
+
 case "$SYSNAME" in
     "")
         echo "ERROR: Needs system name. Use -sysname"
@@ -458,18 +463,9 @@ verilator)
 esac
 
 if [ "$VIDEO_DUMP" = TRUE ]; then
-    #$JTFRAME/bin/bin2png.py $BIN2PNG_OPTIONS
-    rm -f video*.raw
-    $JTFRAME/bin/bin2raw
-    for i in video*.raw; do
-        filename=$(basename $i .raw).jpg
-        if [ -e "$filename" ]; then
-            rm $i       # delete the raw file
-            continue    # do not overwrite
-        fi
-        convert $CONVERT_OPTIONS -size ${VIDEOWIDTH}x${VIDEOHEIGHT} \
-            -depth 8 RGBA:$i $filename && rm $i
-    done
+# convert -size 384x240 -depth 8 RGBA:video.raw -resize 200% video.png
+    convert $CONVERT_OPTIONS -size ${VIDEOWIDTH}x${VIDEOHEIGHT} \
+        -depth 8 RGBA:video.raw video.jpg
 fi
 
 # convert raw sound file to wav format

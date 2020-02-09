@@ -19,7 +19,12 @@
 
 // TODO: Delay vsync one line
 
-module scandoubler #(parameter LENGTH=256, parameter HALF_DEPTH=1)
+module scandoubler #(
+        parameter LENGTH=256, 
+        parameter HALF_DEPTH=1,
+        // Do not modify DWIDTH:
+        parameter DWIDTH = HALF_DEPTH ? 3 : 7
+)
 (
 	// system interface
 	input             clk_vid,
@@ -49,8 +54,6 @@ module scandoubler #(parameter LENGTH=256, parameter HALF_DEPTH=1)
 	output [DWIDTH:0] b_out
 );
 
-localparam DWIDTH = HALF_DEPTH ? 3 : 7;
-
 reg  [7:0] pix_len = 0;
 wire [7:0] pl = pix_len + 1'b1;
 
@@ -59,7 +62,7 @@ wire [7:0] pc_in = pix_in_cnt + 1'b1;
 reg  [7:0] pixsz, pixsz2, pixsz4 = 0;
 
 reg ce_x4i, ce_x1i;
-always @(posedge clk_vid) begin
+always @(posedge clk_vid) begin : block1
 	reg old_ce, valid, hs;
 
 	if(~&pix_len) pix_len <= pl;
@@ -105,6 +108,9 @@ end
 
 reg ce_x4o, ce_x2o;
 reg [1:0] sd_line;
+reg [3:0] vbo;
+reg [3:0] vso;
+reg [8:0] hbo;
 
 Hq2x #(.LENGTH(LENGTH), .HALF_DEPTH(HALF_DEPTH)) Hq2x
 (
@@ -126,7 +132,7 @@ Hq2x #(.LENGTH(LENGTH), .HALF_DEPTH(HALF_DEPTH)) Hq2x
 reg  [7:0] pix_out_cnt = 0;
 wire [7:0] pc_out = pix_out_cnt + 1'b1;
 
-always @(posedge clk_vid) begin
+always @(posedge clk_vid) begin : block2
 	reg hs;
 
 	if(~&pix_out_cnt) pix_out_cnt <= pc_out;
@@ -146,10 +152,7 @@ always @(posedge clk_vid) begin
 	end
 end
 
-reg [3:0] vbo;
-reg [3:0] vso;
-reg [8:0] hbo;
-always @(posedge clk_vid) begin
+always @(posedge clk_vid) begin : block0
 
 	reg [31:0] hcnt;
 	reg [30:0] sd_hcnt;

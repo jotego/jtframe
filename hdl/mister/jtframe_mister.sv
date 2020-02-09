@@ -37,7 +37,7 @@ module jtframe_mister #(parameter
     input           SDRAM_CLK,      // SDRAM Clock
     output          SDRAM_CKE,      // SDRAM Clock Enable
     // ROM load
-    output [21:0]   ioctl_addr,
+    output [22:0]   ioctl_addr,
     output [ 7:0]   ioctl_data,
     output          ioctl_wr,
     input  [21:0]   prog_addr,
@@ -55,6 +55,10 @@ module jtframe_mister #(parameter
     output          data_rdy,
     output          loop_rst,
     input           refresh_en,
+    // Write back to SDRAM
+    input  [ 1:0]   sdram_wrmask,
+    input           sdram_rnw,
+    input  [15:0]   data_write,
 //////////// board
     output          rst,      // synchronous reset
     output          rst_n,    // asynchronous reset
@@ -181,7 +185,7 @@ hps_io #(.STRLEN($size(CONF_STR)/8),.PS2DIV(32)) u_hps_io
 
     .ioctl_download  ( downloading  ),
     .ioctl_wr        ( ioctl_wr     ),
-    .ioctl_addr      ( {hpsio_nc, ioctl_addr } ),
+    .ioctl_addr      ( ioctl_addr   ),
     .ioctl_dout      ( ioctl_data   ),
 
     .joystick_0      ( joystick_USB_1    ),
@@ -275,6 +279,10 @@ jtframe_board #(
     .prog_mask      ( prog_mask       ),
     .prog_we        ( prog_we         ),
     .prog_rd        ( prog_rd         ),
+    // write back support
+    .sdram_wrmask   ( sdram_wrmask    ),
+    .sdram_rnw      ( sdram_rnw       ),
+    .data_write     ( data_write      ),
     // Base video
     .osd_rotate     ( rotate          ),
     .game_r         ( game_r          ),

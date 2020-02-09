@@ -15,6 +15,7 @@ JTCORE compilation tool. (c) Jose Tejada 2019, @topapate
                     JTFRAME_SCAN2X      uses simple scan doubler from JTFRAME
     -git        adds the release file to git
     -mister     compiles MiSTer version. Default is MiST.
+    -seed       sets random seed for compilation
     -sidi       compiles SIDI version. This uses MiST's folders and settings but different pinout
     -prog       programs the FPGA
     -prog-only  skips compilations and directly programs the FPGA
@@ -79,6 +80,7 @@ SKIP_COMPILE=FALSE
 
 # Verilog macros
 MACROS=
+SEED=1
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -89,18 +91,11 @@ while [ $# -gt 0 ]; do
             PROG=TRUE
             SKIP_COMPILE=TRUE;;
         -mister | -mr)
-            MIST=mister
-            if ! (which quartus_sh|grep 17 -q); then
-                PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:.
-                PATH=$PATH:$HOME/intelFPGA_lite/17.1/quartus/bin
-                export PATH
-            fi;;
+            MIST=mister;;
         -mist)
-            MIST=mist
-            PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:.
-            PATH=$PATH:$HOME/altera/13.1/quartus/bin
-            export PATH;;
+            MIST=mist;;
         -sidi)
+            MIST=mist
             SIDI=1;;            
         -add)
             ZIP=TRUE
@@ -108,6 +103,9 @@ while [ $# -gt 0 ]; do
             break;;
         -sim)
             SIM=TRUE;;
+        -seed | -s)
+            shift
+            SEED=$1;;
         -gngvga)
             MACROS="JTFRAME_VGA SCAN2X_TYPE=1 $MACROS";;
         -d)
@@ -123,6 +121,22 @@ while [ $# -gt 0 ]; do
     esac
     shift
 done
+
+# Check Quartus path
+case $MIST in
+    mister)
+        if ! (which quartus_sh|grep 17 -q); then
+            PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:.
+            PATH=$PATH:$HOME/intelFPGA_lite/17.1/quartus/bin
+            export PATH
+        fi;;
+    mist)
+        if ! (which quartus_sh|grep 13 -q); then
+            PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:.
+            PATH=$PATH:$HOME/altera/13.1/quartus/bin
+            export PATH
+        fi;;
+esac
 
 if [[ "$SIDI" = 1 && "MIST" = mister ]]; then
     echo "ERROR: You cannot select MiSTer and SIDI at the same time"
@@ -234,7 +248,7 @@ function sidi_pins {
 }
 
 echo ==============================================
-echo jt$PRJ $MIST compilation starts at $(date +%T)
+echo jt$PRJ $MIST compilation starts at $(date +%T) with seed $SEED
 if [ "$MACROS" != "" ]; then
     echo INFO: Macros used: $MACROS
 else
@@ -243,12 +257,21 @@ fi
 
 ################ compilation
 if [ $SKIP_COMPILE = FALSE ]; then
+    if ! which quartus_sh; then 
+        echo "ERROR: cannot find quartus_sh in the path. Please add the correct path"
+        echo "to the PATH environment variable"
+        exit 1
+    fi
     # Create MiST(er) folders if they don't exist
     mkdir -p $PRJPATH/mist
     mkdir -p $PRJPATH/mister
     # Update message file
-    cd bin
-    jt${PRJ}_msg.py || echo "WARNING: No message file"
+    if [ -d bin ]; then
+        cd bin
+        jt${PRJ}_msg.py || echo "WARNING: No message file"
+    else
+        mkdir bin
+    fi
     # Update Avatars
     if [ -e $PRJPATH/patrons/avatars ]; then
         avatar.py $PRJ > /tmp/avatar_$PRJ.log || ( cat /tmp/avatar_$PRJ.log; exit 1 )
@@ -271,6 +294,7 @@ if [ $SKIP_COMPILE = FALSE ]; then
     for m in $MACROS; do
         echo -e "\n" set_global_assignment -name VERILOG_MACRO \"$m\" >> jt$PRJ.qsf
     done
+    echo -e "\nset_global_assignment -name seed $SEED" >> jt$PRJ.qsf
     if [ $SIM = FALSE ]; then
         # Compilation
         quartus_sh --flow compile jt$PRJ > "$LOG"
@@ -279,6 +303,7 @@ if [ $SKIP_COMPILE = FALSE ]; then
             echo "ERROR while compiling the project. Aborting"
             exit 1
         fi
+        grep Worst-case "$LOG"
     else
         # Simulation
         echo Preparing simulation netlist. Logfile:

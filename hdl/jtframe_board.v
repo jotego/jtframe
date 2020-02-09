@@ -41,6 +41,10 @@ module jtframe_board #(parameter
     output [31:0]     data_read,
     output            data_rdy,
     output            loop_rst,
+    // Write back to SDRAM
+    input  [ 1:0]     sdram_wrmask,
+    input             sdram_rnw,
+    input  [15:0]     data_write,
     // ROM programming
     input  [21:0]     prog_addr,
     input  [ 7:0]     prog_data,
@@ -337,6 +341,11 @@ jtframe_sdram u_sdram(
     .data_read      ( data_read     ),
     .data_rdy       ( data_rdy      ),
     .refresh_en     ( refresh_en    ),
+    // Write back to SDRAM
+    .sdram_wrmask   ( sdram_wrmask  ),
+    .sdram_rnw      ( sdram_rnw     ),
+    .data_write     ( data_write    ),
+
     // ROM-load interface
     .downloading    ( downloading   ),
     .prog_we        ( prog_we       ),
@@ -414,6 +423,7 @@ function [7:0] extend8b;    // the input width is COLORW+1
     endcase
 endfunction
 
+`ifndef NOVIDEO
 generate    
     if( ROTATE_FX ) begin
         wire hblank = ~LHBL;
@@ -663,5 +673,6 @@ generate
         end
     endcase
 endgenerate
+`endif
 
 endmodule // jtgng_board

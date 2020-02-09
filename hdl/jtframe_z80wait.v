@@ -128,9 +128,11 @@ reg last_rom_cs;
 wire rom_cs_posedge = !last_rom_cs && rom_cs;
 
 reg       locked;
-assign gate = !(rom_bad || dev_busy || locked );
+wire rom_bad;
 wire bus_ok = (rom_ok||!rom_cs) && !dev_busy;
-wire rom_bad = rom_cs && !rom_ok || rom_cs_posedge;
+
+assign gate    = !(rom_bad || dev_busy || locked );
+assign rom_bad = rom_cs && !rom_ok || rom_cs_posedge;
 
 always @(posedge clk)
     cen_out <= cen_in & gate;
