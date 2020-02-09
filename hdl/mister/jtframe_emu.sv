@@ -98,6 +98,7 @@ module emu
     // 1 - D-/TX
     // 2..6 - USR2..USR6
     // Set USER_OUT to 1 to read from USER_IN.
+	output		  USER_MODE,
     input   [6:0] USER_IN,
     output  [6:0] USER_OUT
     `ifdef SIMULATION
@@ -135,6 +136,7 @@ localparam CONF_STR = {
     `ifdef HAS_TESTMODE
     "O6,Test mode,OFF,ON;",
     `endif
+	 "OUV,Serial SNAC DB15,Off,1 Player,2 Players;",	 
     `ifdef JT12
     "O7,PSG,ON,OFF;",
     "O8,FM ,ON,OFF;",
@@ -157,7 +159,11 @@ assign VGA_F1=1'b0;
 wire   field;
 assign VGA_F1=field;
 `endif
-assign USER_OUT  = '1; // = 7'b111_1111;
+
+assign USER_OUT = |status[31:30] ? {5'b11111,JOY_CLK,JOY_LOAD} : '1;
+wire JOY_CLK, JOY_LOAD;
+wire JOY_DATA = USER_IN[5];
+assign USER_MODE = |status[31:30] ;
 
 ////////////////////   CLOCKS   ///////////////////
 
@@ -374,6 +380,10 @@ u_frame(
     .scan2x_clk     ( VGA_CLK        ),
     .scan2x_cen     ( VGA_CE         ),
     .scan2x_de      ( VGA_DE         ),
+	 //DB15
+	 .JOY_CLK(JOY_CLK),
+	 .JOY_LOAD(JOY_LOAD),
+	 .JOY_DATA(JOY_DATA),
     // Debug
     .gfx_en         ( gfx_en         )
 );

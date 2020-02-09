@@ -104,6 +104,11 @@ module jtframe_mister #(parameter
     output          dip_pause,
     output          dip_flip,     // A change in dip_flip implies a reset
     output  [ 1:0]  dip_fxlevel,
+	 //DB15 
+	 output          JOY_CLK,
+	 output          JOY_LOAD,
+	 input           JOY_DATA,
+
     // Debug
     output          LED,
     output   [3:0]  gfx_en
@@ -112,7 +117,20 @@ module jtframe_mister #(parameter
 assign LED  = downloading | dwnld_busy;
 
 // control
-wire [15:0]   joystick1, joystick2;
+reg [15:0] joydb15_1,joydb15_2;
+joy_db15 joy_db15
+(
+  .clk       ( clk_sys   ), //48MHz
+  .JOY_CLK   ( JOY_CLK   ),
+  .JOY_DATA  ( JOY_DATA  ),
+  .JOY_LOAD  ( JOY_LOAD  ),
+  .joystick1 ( joydb15_1 ),
+  .joystick2 ( joydb15_2 )	  
+);
+
+wire [15:0]   joystick1 = |status[31:30] ? {joydb15_1[11:10],joydb15_1[9],joydb15_1[7],joydb15_1[8],joydb15_1[5+THREE_BUTTONS:0]} : joystick_USB_1;
+wire [15:0]   joystick2 =  status[31]    ? {joydb15_2[11:10],joydb15_2[9],joydb15_2[8],joydb15_2[7],joydb15_2[5+THREE_BUTTONS:0]} : status[30] ? joystick_USB_1 : joystick_USB_2;
+wire [15:0]   joystick_USB_1,  joystick_USB_2;
 wire          ps2_kbd_clk, ps2_kbd_data;
 wire [2:0]    hpsio_nc; // top 3 bits of ioctl_addr are ignored
 wire          force_scan2x, direct_video;
@@ -170,13 +188,12 @@ hps_io #(.STRLEN($size(CONF_STR)/8),.PS2DIV(32)) u_hps_io
     .ioctl_addr      ( ioctl_addr   ),
     .ioctl_dout      ( ioctl_data   ),
 
-    .joystick_0      ( joystick1    ),
-    .joystick_1      ( joystick2    ),
+    .joystick_0      ( joystick_USB_1    ),
+    .joystick_1      ( joystick_USB_2    ),
     .ps2_kbd_clk_out ( ps2_kbd_clk  ),
     .ps2_kbd_data_out( ps2_kbd_data )
     //.ps2_key       ( ps2_key       )
 );
-
 
 jtframe_board #(
     .THREE_BUTTONS         (THREE_BUTTONS         ),
