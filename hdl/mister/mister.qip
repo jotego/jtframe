@@ -5,4 +5,4 @@ set_global_assignment -name VHDL_FILE          [file join $::quartus(qip_path) .
 set_global_assignment -name VERILOG_FILE       [file join $::quartus(qip_path) ../jtframe_board.v           ]
 set_global_assignment -name VERILOG_FILE       [file join $::quartus(qip_path) ../jtframe_dip.v             ]
 set_global_assignment -name VERILOG_FILE       [file join $::quartus(qip_path) ../sdram/jtframe_sdram.v     ]
-
+set_global_assignment -name VERILOG_FILE       [file join $::quartus(qip_path) joydb15.v 
