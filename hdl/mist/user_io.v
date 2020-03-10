@@ -22,8 +22,10 @@
 
 // parameter STRLEN and the actual length of conf_str have to match
 
-module user_io #(parameter STRLEN=0, parameter PS2DIV=100) (
+module user_io #(parameter STRLEN=0, parameter PS2DIV=100, parameter ROM_DIRECT_UPLOAD=0) (
 	input [(8*STRLEN)-1:0] conf_str,
+	output       [9:0]  conf_addr, // RAM address for config string, if STRLEN=0
+	input        [7:0]  conf_chr,
 
 	input               clk_sys, // clock for system-related messages (kbd, joy, etc...)
 	input               clk_sd,  // clock for SD-card related messages
@@ -33,41 +35,55 @@ module user_io #(parameter STRLEN=0, parameter PS2DIV=100) (
 	output reg          SPI_MISO,
 	input               SPI_MOSI,
 
-	output reg [31:0]   joystick_0,
-	output reg [31:0]   joystick_1,
-	output reg [31:0]   joystick_2,
-	output reg [31:0]   joystick_3,
-	output reg [31:0]   joystick_4,
-	output reg [15:0]   joystick_analog_0,
-	output reg [15:0]   joystick_analog_1,
-	output [1:0]        buttons,
-	output [1:0]        switches,
-	output 		        scandoubler_disable,
+	output reg   [31:0] joystick_0,
+	output reg   [31:0] joystick_1,
+	output reg   [31:0] joystick_2,
+	output reg   [31:0] joystick_3,
+	output reg   [31:0] joystick_4,
+	output reg   [15:0] joystick_analog_0,
+	output reg   [15:0] joystick_analog_1,
+	output        [1:0] buttons,
+	output        [1:0] switches,
+	output              scandoubler_disable,
 	output              ypbpr,
-	output reg [31:0]   status,
+	output              no_csync,
+	output reg   [31:0] status,
+	output reg    [6:0] core_mod, // core variant, sent before the config string is requested
 
 	// connection to sd card emulation
 	input        [31:0] sd_lba,
-	input 		        sd_rd,
-	input 		        sd_wr,
-	output reg 	        sd_ack,
+	input               sd_rd,
+	input               sd_wr,
+	output reg          sd_ack,
 	output reg          sd_ack_conf,
-	input 		        sd_conf,
-	input 		        sd_sdhc,
+	input               sd_conf,
+	input               sd_sdhc,
 	output reg    [7:0] sd_dout, // valid on rising edge of sd_dout_strobe
-	output reg 	        sd_dout_strobe,
+	output reg          sd_dout_strobe,
 	input         [7:0] sd_din,
-	output reg 	        sd_din_strobe,
+	output reg          sd_din_strobe,
 	output reg    [8:0] sd_buff_addr,
 
 	output reg          img_mounted, //rising edge if a new image is mounted
 	output reg   [31:0] img_size,    // size of image in bytes
 
-	// ps2 keyboard emulation
+	// ps2 keyboard/mouse emulation
 	output              ps2_kbd_clk,
 	output reg          ps2_kbd_data,
 	output              ps2_mouse_clk,
 	output reg          ps2_mouse_data,
+
+	// keyboard data
+	output reg          key_pressed,  // 1-make (pressed), 0-break (released)
+	output reg          key_extended, // extended code
+	output reg    [7:0] key_code,     // key scan code
+	output reg          key_strobe,   // key data valid
+
+	// mouse data
+	output reg    [8:0] mouse_x,
+	output reg    [8:0] mouse_y,
+	output reg    [7:0] mouse_flags,  // YOvfl, XOvfl, dy8, dx8, 1, mbtn, rbtn, lbtn
+	output reg          mouse_strobe, // mouse data is valid on mouse_strobe
 
 	// serial com port
 	input [7:0]         serial_data,
@@ -76,18 +92,22 @@ module user_io #(parameter STRLEN=0, parameter PS2DIV=100) (
 
 reg [6:0]     sbuf;
 reg [7:0]     cmd;
-reg [2:0] 	  bit_cnt;    // counts bits 0-7 0-7 ...
+reg [2:0]     bit_cnt;    // counts bits 0-7 0-7 ...
 reg [9:0]     byte_cnt;   // counts bytes
-reg [7:0] 	  but_sw;
+reg [7:0]     but_sw;
 reg [2:0]     stick_idx;
 
 assign buttons = but_sw[1:0];
 assign switches = but_sw[3:2];
 assign scandoubler_disable = but_sw[4];
 assign ypbpr = but_sw[5];
+assign no_csync = but_sw[6];
+
+assign conf_addr = byte_cnt;
 
 // this variant of user_io is for 8 bit cores (type == a4) only
-wire [7:0] core_type = 8'ha4;
+// bit 4 indicates ROM direct upload capability
+wire [7:0] core_type = ROM_DIRECT_UPLOAD ? 8'hb4 : 8'ha4;
 
 // command byte read by the io controller
 wire [7:0] sd_cmd = { 4'h5, sd_conf, sd_sdhc, sd_wr, sd_rd };
@@ -300,7 +320,7 @@ reg [7:0] spi_byte_out;
 
 always@(negedge spi_sck or posedge SPI_SS_IO) begin
 	if(SPI_SS_IO == 1) begin
-	   SPI_MISO <= 1'bZ;
+		SPI_MISO <= 1'bZ;
 	end else begin
 		SPI_MISO <= spi_byte_out[~bit_cnt];
 	end
@@ -319,7 +339,8 @@ always@(posedge spi_sck or posedge SPI_SS_IO) begin
 			spi_byte_out <= 0;
 			case({(!byte_cnt) ? {sbuf, SPI_MOSI} : cmd})
 			// reading config string
-			8'h14: if(byte_cnt < STRLEN) spi_byte_out <= conf_str[(STRLEN - byte_cnt - 1)<<3 +:8];
+			8'h14: if (STRLEN == 0) spi_byte_out <= conf_chr; else
+			       if(byte_cnt < STRLEN) spi_byte_out <= conf_str[(STRLEN - byte_cnt - 1)<<3 +:8];
 
 			// reading sd card status
 			8'h16: if(byte_cnt == 0) begin
@@ -374,11 +395,20 @@ always @(posedge clk_sys) begin
 	reg [7:0] acmd;
 	reg [7:0] abyte_cnt;   // counts bytes
 
+	reg [7:0] mouse_flags_r;
+	reg [7:0] mouse_x_r;
+
+	reg       key_pressed_r;
+	reg       key_extended_r;
+
 	//synchronize between SPI and sys clock domains
 	spi_receiver_strobeD <= spi_receiver_strobe_r;
 	spi_receiver_strobe <= spi_receiver_strobeD;
 	spi_transfer_endD	<= spi_transfer_end_r;
 	spi_transfer_end	<= spi_transfer_endD;
+
+	key_strobe <= 0;
+	mouse_strobe <= 0;
 
 	if (~spi_transfer_endD & spi_transfer_end) begin
 		abyte_cnt <= 8'd0;
@@ -402,11 +432,32 @@ always @(posedge clk_sys) begin
 					// store incoming ps2 mouse bytes
 					ps2_mouse_fifo[ps2_mouse_wptr] <= spi_byte_in;
 					ps2_mouse_wptr <= ps2_mouse_wptr + 1'd1;
+					if (abyte_cnt == 1) mouse_flags_r <= spi_byte_in;
+					else if (abyte_cnt == 2) mouse_x_r <= spi_byte_in;
+					else if (abyte_cnt == 3) begin
+						// flags: YOvfl, XOvfl, dy8, dx8, 1, mbtn, rbtn, lbtn
+						mouse_flags <= mouse_flags_r;
+						mouse_x <= { mouse_flags_r[4], mouse_x_r };
+						mouse_y <= { mouse_flags_r[5], spi_byte_in };
+						mouse_strobe <= 1;
+					end
 				end
 				8'h05: begin
 					// store incoming ps2 keyboard bytes
 					ps2_kbd_fifo[ps2_kbd_wptr] <= spi_byte_in;
 					ps2_kbd_wptr <= ps2_kbd_wptr + 1'd1;
+					if (abyte_cnt == 1) begin
+						key_extended_r <= 0;
+						key_pressed_r <= 1;
+					end
+					if (spi_byte_in == 8'he0) key_extended_r <= 1'b1;
+					else if (spi_byte_in == 8'hf0) key_pressed_r <= 1'b0;
+					else begin
+						key_extended <= key_extended_r;
+						key_pressed <= key_pressed_r || abyte_cnt == 1;
+						key_code <= spi_byte_in;
+						key_strobe <= 1'b1;
+					end
 				end
 
 				// joystick analog
@@ -434,7 +485,10 @@ always @(posedge clk_sys) begin
 				// status, 32bit version
 				8'h1e: if(abyte_cnt<5) status[(abyte_cnt-1)<<3 +:8] <= spi_byte_in;
 
-				endcase
+				// core variant
+				8'h21: core_mod <= spi_byte_in[6:0];
+
+			endcase
 		end
 	end
 end
@@ -506,8 +560,10 @@ always @(posedge clk_sd) begin
 
 				// send sector FPGA -> IO
 				8'h18: begin
-					sd_din_strobe <= 1'b1;
-					if(~&sd_buff_addr) sd_buff_addr <= sd_buff_addr + 1'b1;
+					if(~&sd_buff_addr) begin
+						sd_din_strobe <= 1'b1;
+						sd_buff_addr <= sd_buff_addr + 1'b1;
+					end
 				end
 
 				// send SD config IO -> FPGA

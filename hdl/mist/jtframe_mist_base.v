@@ -55,7 +55,7 @@ module jtframe_mist_base #(parameter
     output          VIDEO_HS,
     output          VIDEO_VS,
     // SPI interface to arm io controller
-    output          SPI_DO,
+    inout           SPI_DO,
     input           SPI_DI,
     input           SPI_SCK,
     input           SPI_SS2,
@@ -125,7 +125,7 @@ assign snd_pwm_right = 1'b0;
 `endif
 
 `ifndef SIMULATION
-user_io #(.STRLEN(CONF_STR_LEN)) u_userio(
+user_io #(.STRLEN(CONF_STR_LEN), .ROM_DIRECT_UPLOAD(1'b1)) u_userio(
     .clk_sys        ( clk_sys   ),
     .conf_str       ( CONF_STR  ),
     .SPI_CLK        ( SPI_SCK   ),
@@ -167,18 +167,19 @@ assign scan2x_enb = `SCANDOUBLER_DISABLE;
 assign ypbpr = 1'b0;
 `endif
 
-data_io u_datain (
-    .sck                ( SPI_SCK      ),
-    .ss                 ( SPI_SS2      ),
-    .sdi                ( SPI_DI       ),
+data_io #(.ROM_DIRECT_UPLOAD(1'b1)) u_datain (
+    .SPI_SCK            ( SPI_SCK      ),
+    .SPI_SS2            ( SPI_SS2      ),
+    .SPI_SS4            ( SPI_SS4      ),
+    .SPI_DI             ( SPI_DI       ),
+    .SPI_DO             ( SPI_DO       ),
     
-    .rst                ( rst          ),
-    .clk_sdram          ( clk_rom      ),
-    .downloading_sdram  ( downloading  ),
+    .clk_sys            ( clk_rom      ),
+    .ioctl_download     ( downloading  ),
     .ioctl_addr         ( ioctl_addr   ),
-    .ioctl_data         ( ioctl_data   ),
+    .ioctl_dout         ( ioctl_data   ),
     .ioctl_wr           ( ioctl_wr     ),
-    .index              ( /* unused*/  )
+    .ioctl_index        ( /* unused*/  )
 );
 
 // OSD will only get simulated if SIMULATE_OSD is defined
