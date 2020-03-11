@@ -74,7 +74,7 @@ module jtframe_mist #(parameter
     input           sdram_rnw,
     input  [15:0]   data_write,
     // SPI interface to arm io controller
-    output          SPI_DO,
+    inout           SPI_DO,
     input           SPI_DI,
     input           SPI_SCK,
     input           SPI_SS2,

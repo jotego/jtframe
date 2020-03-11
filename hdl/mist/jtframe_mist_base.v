@@ -125,7 +125,7 @@ assign snd_pwm_right = 1'b0;
 `endif
 
 `ifndef SIMULATION
-user_io #(.STRLEN(CONF_STR_LEN)/*, .ROM_DIRECT_UPLOAD(1'b1)*/) u_userio(
+user_io #(.STRLEN(CONF_STR_LEN), .ROM_DIRECT_UPLOAD(1'b1)) u_userio(
     .clk_sys        ( clk_sys   ),
     .conf_str       ( CONF_STR  ),
     .SPI_CLK        ( SPI_SCK   ),
