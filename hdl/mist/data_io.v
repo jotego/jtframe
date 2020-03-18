@@ -52,7 +52,6 @@ reg  [7:0] data_w2  = 0;
 reg        rclk   = 0;
 reg        rclk2  = 0;
 reg        addr_reset = 0;
-reg [31:0] filesize;
 reg        downloading_reg = 0;
 reg  [7:0] index_reg = 0;
 
@@ -127,12 +126,10 @@ always@(posedge SPI_SCK, posedge SPI_SS4) begin : SPI_DIRECT_RECEIVER
 	reg  [6:0] sbuf2;
 	reg  [2:0] cnt2;
 	reg  [9:0] bytecnt;
-	reg [31:0] filepos;
 
 	if(SPI_SS4) begin
 		cnt2 <= 0;
 		bytecnt <= 0;
-		filepos <= 0;
 	end else begin
 		// don't shift in last bit. It is evaluated directly
 		// when writing to ram
@@ -147,8 +144,7 @@ always@(posedge SPI_SCK, posedge SPI_SS4) begin : SPI_DIRECT_RECEIVER
 			// read 514 byte/sector (512 + 2 CRC)
 			if (bytecnt == 513) bytecnt <= 0;
 			// don't send the CRC bytes
-			if (~bytecnt[9] && filepos != ioctl_filesize) begin
-				filepos <= filepos + 1'd1;
+			if (~bytecnt[9]) begin
 				data_w2 <= {sbuf2, SPI_DO};
 				rclk2 <= ~rclk2;
 			end
@@ -166,6 +162,7 @@ always@(posedge clk_sys) begin : DATA_OUT
 	reg addr_resetD, addr_resetD2;
 	reg wr_int, wr_int_direct;
 	reg [24:0] addr;
+	reg [31:0] filepos;
 
 	{ rclkD, rclkD2 } <= { rclk, rclkD };
 	{ rclk2D ,rclk2D2 } <= { rclk2, rclk2D };
@@ -189,13 +186,17 @@ always@(posedge clk_sys) begin : DATA_OUT
 	// detect transfer start from the SPI receiver
 	if(addr_resetD ^ addr_resetD2) begin
 		addr <= START_ADDR;
+		filepos <= 0;
 		ioctl_index <= index_reg;
 		ioctl_download <= 1;
 	end
 
 	// detect new byte from the SPI receiver
 	if (rclkD ^ rclkD2)   wr_int <= 1;
-	if (rclk2D ^ rclk2D2) wr_int_direct <= 1;
+	if (rclk2D ^ rclk2D2 && filepos != ioctl_filesize) begin
+		filepos <= filepos + 1'd1;
+		wr_int_direct <= 1;
+	end
 end
 
 endmodule
