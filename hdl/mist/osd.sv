@@ -182,24 +182,23 @@ always @(posedge clk_sys) begin
 end
 
 // area in which OSD is being displayed
-wire [9:0] h_osd_start = ((dsp_width - OSD_WIDTH)>> 10'd1) + OSD_X_OFFSET;
-wire [9:0] h_osd_end   = h_osd_start + OSD_WIDTH;
-wire [9:0] v_osd_start = ((dsp_height- (OSD_HEIGHT<<doublescan))>> 10'd1) + OSD_Y_OFFSET;
-wire [9:0] v_osd_end   = v_osd_start + (OSD_HEIGHT<<doublescan);
+reg [9:0] h_osd_start;
+reg [9:0] h_osd_end;
+reg [9:0] v_osd_start;
+reg [9:0] v_osd_end;
+
+always @(posedge clk_sys) begin
+	h_osd_start <= ((dsp_width - OSD_WIDTH)>> 1) + OSD_X_OFFSET;
+	h_osd_end   <= h_osd_start + OSD_WIDTH;
+	v_osd_start <= ((dsp_height- (OSD_HEIGHT<<doublescan))>> 1) + OSD_Y_OFFSET;
+	v_osd_end   <= v_osd_start + (OSD_HEIGHT<<doublescan);
+end
+
 wire [9:0] osd_hcnt    = h_cnt - h_osd_start;
 wire [9:0] osd_vcnt    = v_cnt - v_osd_start;
 wire [9:0] osd_hcnt_next  = osd_hcnt + 2'd1;  // one pixel offset for osd pixel
 wire [9:0] osd_hcnt_next2 = osd_hcnt + 2'd2;  // two pixel offset for osd byte address register
-
-`ifdef SIMULATE_OSD
-wire osd_de = 
-              (HSync != hs_pol) && (h_cnt >= h_osd_start) && (h_cnt < h_osd_end) &&
-              (VSync != vs_pol) && (v_cnt >= v_osd_start) && (v_cnt < v_osd_end);
-`else 
-wire osd_de = osd_enable &&
-              (HSync != hs_pol) && (h_cnt >= h_osd_start) && (h_cnt < h_osd_end) &&
-              (VSync != vs_pol) && (v_cnt >= v_osd_start) && (v_cnt < v_osd_end);
-`endif
+reg        osd_de;
 
 reg [10:0] osd_buffer_addr;
 wire [7:0] osd_byte = osd_buffer[osd_buffer_addr];
@@ -219,24 +218,36 @@ wire	   back_pixel = 1'b1;
 `endif
 
 always @(posedge clk_sys) begin
-	osd_buffer_addr <= rotate[0] ? {rotate[1] ? osd_hcnt_next2[7:5] : ~osd_hcnt_next2[7:5],
-	                                rotate[1] ? (doublescan ? ~osd_vcnt[7:0] : ~{osd_vcnt[6:0], 1'b0}) :
-									            (doublescan ?  osd_vcnt[7:0]  : {osd_vcnt[6:0], 1'b0})} :
-                                    // no rotation
-	                               {doublescan ? osd_vcnt[7:5] : osd_vcnt[6:4], osd_hcnt_next2[7:0]};
+	if (ce_pix) begin
+		osd_buffer_addr <= rotate[0] ? {rotate[1] ? osd_hcnt_next2[7:5] : ~osd_hcnt_next2[7:5],
+		                   rotate[1] ? (doublescan ? ~osd_vcnt[7:0] : ~{osd_vcnt[6:0], 1'b0}) :
+		                               (doublescan ?  osd_vcnt[7:0]  : {osd_vcnt[6:0], 1'b0})} :
+		                   // no rotation
+		                               {doublescan ? osd_vcnt[7:5] : osd_vcnt[6:4], osd_hcnt_next2[7:0]};
 
-	osd_pixel <= rotate[0]  ? osd_byte[rotate[1] ? osd_hcnt_next[4:2] : ~osd_hcnt_next[4:2]] :
-	                          osd_byte[doublescan ? osd_vcnt[4:2] : osd_vcnt[3:1]];
-	`ifndef OSD_NOBCK
-	back_pixel <= rotate[0]  ? 
+		osd_pixel <= rotate[0]  ? osd_byte[rotate[1] ? osd_hcnt_next[4:2] : ~osd_hcnt_next[4:2]] :
+		                          osd_byte[doublescan ? osd_vcnt[4:2] : osd_vcnt[3:1]];
+		`ifndef OSD_NOBCK
+		back_pixel <= rotate[0]  ? 
                               back_byte[rotate[1] ? osd_hcnt_next[4:2] : ~osd_hcnt_next[4:2]] :
                               // no rotation:
                               back_byte[doublescan ? osd_vcnt[4:2] : osd_vcnt[3:1]];
-    `endif
-    R_out <= !osd_de ? R_in : { {2{osd_pixel}}, OSD_COLOR[5:4]&{2{back_pixel}}, R_in[5:4]};
-    G_out <= !osd_de ? G_in : { {2{osd_pixel}}, OSD_COLOR[3:2]&{2{back_pixel}}, G_in[5:4]};
-    B_out <= !osd_de ? B_in : { {2{osd_pixel}}, OSD_COLOR[1:0]&{2{back_pixel}}, B_in[5:4]};
-    HSync_out <= HSync;
+		`endif
+
+		`ifdef SIMULATE_OSD
+		osd_de <=
+		`else
+		osd_de <= osd_enable &&
+		`endif
+			(HSync != hs_pol) && ((h_cnt + 1'd1) >= h_osd_start) && ((h_cnt + 1'd1) < h_osd_end) &&
+			(VSync != vs_pol) && (v_cnt >= v_osd_start) && (v_cnt < v_osd_end);
+
+	end
+
+	R_out <= !osd_de ? R_in : { {2{osd_pixel}}, OSD_COLOR[5:4]&{2{back_pixel}}, R_in[5:4]};
+	G_out <= !osd_de ? G_in : { {2{osd_pixel}}, OSD_COLOR[3:2]&{2{back_pixel}}, G_in[5:4]};
+	B_out <= !osd_de ? B_in : { {2{osd_pixel}}, OSD_COLOR[1:0]&{2{back_pixel}}, B_in[5:4]};
+	HSync_out <= HSync;
 	VSync_out <= VSync;
 end
 
