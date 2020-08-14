@@ -27,8 +27,8 @@ jtroot_path=os.environ['JTROOT']+"/"
 
 # output arrays
 maxobj=128
-bufzy=bytearray(maxobj*16*16/4)
-bufxw=bytearray(maxobj*16*16/4)
+bufzy=bytearray(int(maxobj*16*16/4))
+bufxw=bytearray(int(maxobj*16*16/4))
 for x in range(len(bufzy)):
     bufzy[x] = 0xff
     bufxw[x] = 0xff
@@ -87,9 +87,9 @@ def dump_block( rowc, colc, bmp, pal, palidx ):
 # convert bitmap to OBJ, size must be multiple of 16x16
 def convert_bmp(bmp, pal, palidx):
     global offsety
-    print "\tBMP size = %d, %d" % (len(bmp), len(bmp[0])/4)
+    print("\tBMP size = %d, %d" % (len(bmp), len(bmp[0])/4))
     if len(bmp)%16!=0 or len(bmp[0])%16!=0:
-        print "Error: BMP size is not a multiple of 16"
+        print("Error: BMP size is not a multiple of 16")
         exit(1)
     rowc=0
     while rowc<len(bmp):
@@ -133,10 +133,10 @@ def get_pal(bmp):
         pal[k]=j
         j+=1
     if verbose:
-        print "Original:"
-        print palorig
-        print "Converted"
-        print pal
+        print("Original:")
+        print(palorig)
+        print("Converted")
+        print(pal)
     print( "\tPalette conversion %d to %d" % (len(palorig),len(pal)))
     return pal
 
@@ -146,7 +146,7 @@ pal_list=list()
 
 def convert_file(filename):
     p=jtroot_path+filename.strip("\n")
-    print p
+    print(p)
     bmp=read_bmp( p )
     pal=get_pal(bmp)
     palidx = len(pal_list)
@@ -163,8 +163,8 @@ if os.path.exists(jtroot_path+"cores/"):
 else:
     corepath=jtroot_path
 
-print "corepath=", corepath
-print "jtroot_path=", jtroot_path
+print("corepath=", corepath)
+print("jtroot_path=", jtroot_path)
 
 avatar_filename = corepath+"/patrons/avatars"
 file = open( avatar_filename )
