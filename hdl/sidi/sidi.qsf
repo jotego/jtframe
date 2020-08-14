@@ -184,6 +184,7 @@ set_global_assignment -name CDF_FILE jtag.cdf
 
 # SDRAM
 set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_*
+set_instance_assignment -name FAST_OUTPUT_ENABLE_REGISTER ON -to SDRAM_DQ[*]
 
 set_global_assignment -name QIP_FILE ${MODULES}/jtframe/hdl/mist/pll48/jtframe_pll0.qip
 set_global_assignment -name QIP_FILE ${MODULES}/jtframe/hdl/mist/pll48/jtframe_pll1.qip
