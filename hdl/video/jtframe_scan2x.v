@@ -79,11 +79,10 @@ localparam CLKSTEPS=8;
 localparam [CLKSTEPS-1:0] BLEND_ST = 8'b10;
 `else
 localparam CLKSTEPS=4;
+localparam [CLKSTEPS-1:0] BLEND_ST = 2;
 `endif
 
 localparam [CLKSTEPS-1:0] PURE_ST  = 0;
-localparam [CLKSTEPS-1:0] BLEND_ST = 2;
-
 reg alt_pxl; // this is needed in case pxl2_cen and pxl_cen are not aligned.
 reg [CLKSTEPS-1:0] mixst;
 
