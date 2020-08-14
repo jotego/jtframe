@@ -190,10 +190,11 @@ always @(posedge clk)
         refresh_cycle <= 0;
         write_cycle <= 1'b0;
         read_cycle  <= 1'b0;
-        hold_bus    <= 1'b1;
+        hold_bus    <= 1'b0;
         SDRAM_BA    <= 2'b0;
         SDRAM_DQ    <= 16'hzzzz;
     end else if( initialize ) begin
+        SDRAM_DQ <= (hold_en && hold_bus) ? 16'h0 : 16'hzzzz;
         if( |wait_cnt ) begin
             wait_cnt <= wait_cnt-14'd1;
             init_cmd  <= CMD_NOP;
@@ -240,7 +241,6 @@ always @(posedge clk)
     end else begin
     //////////////////////////////////////////////////////////////////////////////////
     // regular operation
-        SDRAM_DQ <= hold_en && hold_bus ? 16'h0 : 16'hzzzz;
         if( !cnt_state[0] || refresh_ok ||
             (!downloading && read_req  ) || /* when not downloading */
             ( downloading && (writeon || readprog ) ) /* when downloading */) begin
