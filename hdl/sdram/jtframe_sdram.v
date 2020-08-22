@@ -131,30 +131,13 @@ reg       initialize;
 
 assign loop_rst = initialize;
 
-reg downloading_last;
-
-// Uses downloading_last instead of downloading to alleviate
-// top level timing
-
-reg set_burst, burst_done, burst_mode;
 reg writeon, readprog;
 //wire refresh_ok = !read_req;
 reg refresh_ok;
 
-always @(posedge clk or posedge rst) begin
-    if(rst) begin
-        set_burst  <= 0;
-        burst_mode <= 0;
-    end else begin
-        writeon  <= downloading && prog_we;
-        readprog <= downloading && prog_rd;
-        downloading_last <= downloading;
-        if( downloading != downloading_last) begin
-            set_burst <= 1'b1;
-            burst_mode <= ~downloading;
-        end
-        if( burst_done ) set_burst <= 1'b0;
-    end
+always @(posedge clk) begin
+    writeon  <= downloading && prog_we;
+    readprog <= downloading && prog_rd;
 end
 
 reg refresh_cycle;
@@ -184,7 +167,6 @@ always @(posedge clk)
         initialize    <= 1'b1;
         init_state    <= 3'd0;
         // Main loop
-        burst_done    <= 1'b0;
         cnt_state     <= 8'd1; //Starts after the precharge
         dq_rdy        <= 1'b0;
         sdram_ack     <= 1'b0;
@@ -258,18 +240,10 @@ always @(posedge clk)
             write_cycle    <= 0;
             read_cycle     <= 0;
             refresh_cycle  <= 0;
-            burst_done     <= 0;
             hold_bus       <= 1;
             dq_rdy         <= 0;
             {SDRAM_DQMH, SDRAM_DQML } <= 2'b00;
-            if( set_burst ) begin
-                SDRAM_CMD <= CMD_LOAD_MODE;
-                // Burst mode can be 0 = 1 word. Used for ROM downloading
-                // or 1 = 2 words, used for normal operation
-                SDRAM_A   <= {12'b00_1_00_010_0_00, burst_mode}; // CAS Latency = 2
-                burst_done <= 1'b1;
-                cnt_state  <= 8'b0000_1000; // give one NOP cycle after changing the mode
-            end else begin
+            begin
                 SDRAM_CMD <= CMD_NOP;
                 if( writeon || readprog ) begin // ROM downloading
                     SDRAM_CMD <= CMD_ACTIVATE;
