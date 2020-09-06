@@ -285,7 +285,7 @@ localparam START_BIT  = 6+(BUTTONS-2);
 localparam COIN_BIT   = 7+(BUTTONS-2);
 localparam PAUSE_BIT  = 8+(BUTTONS-2);
 
-reg last_pause, last_joypause, last_reset;
+reg last_pause, last_osd_pause, last_joypause, last_reset;
 reg [3:0] last_gfx;
 wire joy_pause = joy1_sync[PAUSE_BIT] | joy2_sync[PAUSE_BIT];
 
@@ -325,6 +325,7 @@ always @(posedge clk_sys)
         gfx_en       <= 4'hf;
     end else begin
         last_pause   <= key_pause;
+        last_osd_pause <= osd_pause;
         last_reset   <= key_reset;
         last_joypause <= joy_pause; // joy is active low!
 
@@ -360,9 +361,11 @@ always @(posedge clk_sys)
         `ifndef DIP_PAUSE // Forces pause during simulation
         if( downloading )
             game_pause<=0;
-        else // toggle
-            if( (key_pause && !last_pause) || (joy_pause && !last_joypause) || osd_pause)
+        else begin// toggle
+            if( (key_pause && !last_pause) || (joy_pause && !last_joypause) )
                 game_pause   <= ~game_pause;
+            if (last_osd_pause ^ osd_pause) game_pause <= osd_pause;
+        end
         `else
         game_pause <= 1'b1;
         `endif
