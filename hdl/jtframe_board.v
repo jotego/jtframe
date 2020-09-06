@@ -294,10 +294,14 @@ integer cnt;
 function [9:0] apply_rotation;
     input [9:0] joy_in;
     input       rot;
+    input       flip;
     input       invert;
     begin
     apply_rotation = {10{invert}} ^
-        (!rot ? joy_in : { joy_in[9:4], joy_in[0], joy_in[1], joy_in[3], joy_in[2] });
+        (!rot ? joy_in :
+        flip ?
+         { joy_in[9:4], joy_in[1], joy_in[0], joy_in[2], joy_in[3] } :
+         { joy_in[9:4], joy_in[0], joy_in[1], joy_in[3], joy_in[2] });
     end
 endfunction
 
@@ -336,7 +340,7 @@ always @(posedge clk_sys)
         game_start = {4{invert_inputs}} ^ { 2'b0, sim_inputs[frame_cnt][3:2] };
         game_joystick1 <= {10{invert_inputs}} ^ { 4'd0, sim_inputs[frame_cnt][9:4]};
         `else
-        game_joystick1 <= apply_rotation(joy1_sync | key_joy1, rot_control, invert_inputs);
+        game_joystick1 <= apply_rotation(joy1_sync | key_joy1, rot_control, ~dip_flip, invert_inputs);
         game_coin      <= {4{invert_inputs}} ^
             ({  joy4_sync[COIN_BIT],joy3_sync[COIN_BIT],
                 joy2_sync[COIN_BIT],joy1_sync[COIN_BIT]} | key_coin);
@@ -345,9 +349,9 @@ always @(posedge clk_sys)
             ({  joy4_sync[START_BIT],joy3_sync[START_BIT],
                 joy2_sync[START_BIT],joy1_sync[START_BIT]} | key_start);
         `endif
-        game_joystick2 <= apply_rotation(joy2_sync | key_joy2, rot_control, invert_inputs);
-        game_joystick3 <= apply_rotation(joy3_sync | key_joy3, rot_control, invert_inputs);
-        game_joystick4 <= apply_rotation(joy4_sync           , rot_control, invert_inputs);
+        game_joystick2 <= apply_rotation(joy2_sync | key_joy2, rot_control, ~dip_flip, invert_inputs);
+        game_joystick3 <= apply_rotation(joy3_sync | key_joy3, rot_control, ~dip_flip, invert_inputs);
+        game_joystick4 <= apply_rotation(joy4_sync           , rot_control, ~dip_flip, invert_inputs);
 
         soft_rst <= key_reset && !last_reset;
 
