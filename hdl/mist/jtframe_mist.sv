@@ -30,7 +30,7 @@ module jtframe_mist #(parameter
     input           clk_vga,
     input           pll_locked,
     // interface with microcontroller
-    output  [31:0]  status,
+    output  [63:0]  status,
     // Base video
     input [COLORW-1:0] game_r,
     input [COLORW-1:0] game_g,

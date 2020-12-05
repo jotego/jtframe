@@ -115,7 +115,8 @@ localparam CONF_STR = {
 `undef SEPARATOR`endif
 
 wire          rst, rst_n, clk_sys, clk_rom, clk6, clk24;
-wire [31:0]   status, joystick1, joystick2;
+wire [63:0]   status;
+wire [31:0]   joystick1, joystick2;
 wire [21:0]   sdram_addr;
 wire [31:0]   data_read;
 wire          loop_rst;
@@ -384,7 +385,7 @@ localparam DIPBASE=16;
 `ifdef JTFRAME_SIM_DIPS
     wire [31:0] dipsw = `JTFRAME_SIM_DIPS;
 `else
-    wire [31:0] dipsw = { {DIPBASE{1'b1}}, status[31:DIPBASE]  };
+    wire [31:0] dipsw = status[31+DIPBASE:DIPBASE];
 `endif
 
 `GAMETOP

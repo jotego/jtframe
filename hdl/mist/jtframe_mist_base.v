@@ -61,7 +61,7 @@ module jtframe_mist_base #(parameter
     input           SPI_SS4,
     input           CONF_DATA0,
     // control
-    output [31:0]   status,
+    output [63:0]   status,
     output [31:0]   joystick1,
     output [31:0]   joystick2,
     output [31:0]   joystick3,
@@ -172,7 +172,7 @@ assign joystick1 = 32'd0;
 assign joystick2 = 32'd0;
 assign joystick3 = 32'd0;
 assign joystick4 = 32'd0;
-assign status    = 32'd0;
+assign status    = 63'd0;
 assign ps2_kbd_data = 1'b0;
 assign ps2_kbd_clk  = 1'b0;
 `ifndef SCANDOUBLER_DISABLE
