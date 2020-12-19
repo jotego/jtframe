@@ -78,7 +78,9 @@ module jtframe_mist_base #(parameter
     // ROM load from SPI
     output [24:0]   ioctl_addr,
     output [ 7:0]   ioctl_data,
+    input  [ 7:0]   ioctl_data_out,
     output          ioctl_wr,
+    output          ioctl_ram,
     output          downloading
 );
 
@@ -87,6 +89,7 @@ wire [7:0]  ioctl_index;
 wire        ioctl_download;
 
 assign downloading = ioctl_download;
+assign ioctl_ram = ioctl_index == 8'hFF;
 
 `ifndef SIMULATION
     `ifndef NOSOUND
@@ -206,6 +209,7 @@ data_io #(.ROM_DIRECT_UPLOAD(1'b1)) u_datain (
     .ioctl_download     ( ioctl_download    ),
     .ioctl_addr         ( ioctl_addr        ),
     .ioctl_dout         ( ioctl_data        ),
+    .ioctl_din          ( ioctl_data_out    ),
     .ioctl_wr           ( ioctl_wr          ),
     .ioctl_index        ( ioctl_index       ),
     // Unused:

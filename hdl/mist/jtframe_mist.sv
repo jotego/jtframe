@@ -101,6 +101,8 @@ module jtframe_mist #(parameter
     output   [24:0] ioctl_addr,
     output   [ 7:0] ioctl_data,
     output          ioctl_wr,
+    input    [ 7:0] ioctl_data_out,
+    output          ioctl_ram,
     input           dwnld_busy,
     output          downloading,
 
@@ -222,7 +224,9 @@ jtframe_mist_base #(
     // ROM load from SPI
     .ioctl_addr     ( ioctl_addr    ),
     .ioctl_data     ( ioctl_data    ),
+    .ioctl_data_out ( ioctl_data_out),
     .ioctl_wr       ( ioctl_wr      ),
+    .ioctl_ram      ( ioctl_ram     ),
     .downloading    ( downloading   )
 );
 

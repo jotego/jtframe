@@ -108,6 +108,9 @@ localparam CONF_STR = {
     `ifdef CORE_OSD
         `CORE_OSD
     `endif
+    `ifdef CORE_NVRAM_SIZE
+        "R",`CORE_NVRAM_SIZE,",Save NVRAM;",
+    `endif
     "T0,RST;",
     "V,patreon.com/topapate;"
 };
@@ -119,7 +122,9 @@ wire [63:0]   status;
 wire [31:0]   joystick1, joystick2;
 wire [24:0]   ioctl_addr;
 wire [ 7:0]   ioctl_data;
+wire [ 7:0]   ioctl_data_out;
 wire          ioctl_wr;
+wire          ioctl_ram;
 
 wire [15:0]   joystick_analog_0, joystick_analog_1;
 
@@ -315,7 +320,9 @@ u_frame(
     // ROM load
     .ioctl_addr     ( ioctl_addr     ),
     .ioctl_data     ( ioctl_data     ),
+    .ioctl_data_out ( ioctl_data_out ),
     .ioctl_wr       ( ioctl_wr       ),
+    .ioctl_ram      ( ioctl_ram      ),
 
     .prog_addr      ( prog_addr      ),
     .prog_data      ( prog_data      ),
@@ -454,6 +461,10 @@ u_game(
     .ioctl_addr  ( ioctl_addr     ),
     .ioctl_data  ( ioctl_data     ),
     .ioctl_wr    ( ioctl_wr       ),
+`ifdef CORE_NVRAM_SIZE
+    .ioctl_ram   ( ioctl_ram      ),
+    .ioctl_data_out(ioctl_data_out),
+`endif
     // ROM load
     .downloading ( downloading    ),
     .dwnld_busy  ( dwnld_busy     ),
