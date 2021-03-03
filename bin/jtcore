@@ -33,6 +33,17 @@ SEED=1
 OUTPUTDIR=output_files
 PRJ=
 
+red=`tput setaf 1`
+green=`tput setaf 2`
+blue=`tput setaf 4`
+white=`tput setaf 7`
+rBG=`tput setab 1; tput setaf 7`
+gBG=`tput setab 2; tput setaf 7`
+bBG=`tput setab 4; tput setaf 7`
+yBG=`tput setab 3; tput setaf 7`
+wBG=`tput setab 7`
+NC=`tput sgr0`
+
 function parse_args {
     while [ $# -gt 0 ]; do
         case "$1" in
@@ -52,7 +63,7 @@ function parse_args {
                     PRJ=$1
                 else
                     echo "Project name had already been defined to " $PRJ
-                    echo "ERROR: Unknown option $1";
+                    echo -e "${rBG}ERROR:${NC}${wBG} Unknown option ${red}$1${NC}";
                     exit 1
                 fi
                 ;;
@@ -71,13 +82,13 @@ if [ "$JTROOT" = "" ]; then
     if [ -e setprj.sh ]; then
         source setprj.sh --quiet
     else
-        echo "WARNING: cannot find setprj.sh in " $(pwd)
+        echo -e "${yBG}WARNING:${NC}${wBG} cannot find setprj.sh in ${red}$(pwd)${NC}"
     fi
 fi
 
 if [ "$JTROOT" = "" ]; then
-    echo "ERROR: Missing JTROOT environment variable. Define it to"
-    echo "point to the root folder of the project to compile."
+    echo -e "${rBG}ERROR:${NC}${wBG} Missing JTROOT environment variable. Define it to${NC}"
+    echo -e "      ${wBG} point to the root folder of the project to compile.${NC}"
     exit 1
 fi
 
@@ -88,15 +99,15 @@ JTFRAME=$MODULES/jtframe
 CORESTAMP=$(date +"%Y%m%d")
 
 if [ ! -e "$JTFRAME" ]; then
-    echo "ERROR: cannot locate jtframe folder."
-    echo "       It should be at $JTFRAME"
+    echo -e "${rBG}ERROR:${NC}${wBG} cannot locate jtframe folder.${NC}"
+    echo -e "      ${wBG} It should be at ${red}$JTFRAME${NC}"
     exit 1
 fi
 
 # Is the project defined?
 case "$PRJ" in
     "")
-        echo "ERROR: Missing project name."
+        echo -e "${rBG}ERROR:${NC}${wBG} Missing project name.${NC}"
         show_usage
         exit 1;;
     -help | -h | --help)
@@ -104,7 +115,7 @@ case "$PRJ" in
 esac
 
 if [ ${PRJ:0:1} = - ]; then
-    echo "ERROR: Missing project name."
+    echo -e "${rBG}ERROR:${NC}${wBG} Missing project name.${NC}"
     exit 1
 fi
 
@@ -115,7 +126,7 @@ elif [ -e $JTROOT/$PRJ ]; then
 elif [ -e $JTROOT/hdl ]; then
     PRJPATH=$JTROOT
 else
-    echo "ERROR: Cannot find a valid project path"
+    echo -e "${rBG}ERROR:${NC}${wBG} Cannot find a valid project path${NC}"
     exit 1
 fi
 shift
@@ -192,7 +203,7 @@ function link_if_missing {
         if [ -e ../mist/$1 ]; then
             ln -sr ../mist/$1 && echo "Linked file $1" && git add $1 -f
         else
-            echo WARNING: Missing $1
+            echo -e "${yBG}WARNING:${NC}${wBG} Missing ${red}$1${NC}"
         fi
     fi
 }
@@ -207,8 +218,9 @@ function report {
         $PRJCOMMIT $JTFRAMECOMMIT >> $JTROOT/log/builds.log
 }
 
+START_TIME=$(date +%s)
 echo ==============================================
-echo jt$PRJ $TARGET compilation starts at $(date +%T) with seed $SEED on $(hostname)
+echo -e "${wBG}jt$PRJ $TARGET compilation ${blue}starts${NC}${wBG} at ${red}$(date +%T)${NC}${wBG} with seed ${red}$SEED${NC}${wBG} on $(hostname)${NC}"
 if [ "$MACROS" != "" ]; then
     echo Explicit macros: $MACROS
 fi
@@ -216,8 +228,8 @@ fi
 ################ compilation
 if [ $SKIP_COMPILE = FALSE ]; then
     if ! which quartus_sh>/dev/null; then
-        echo "ERROR: cannot find quartus_sh in the path. Please add the correct path"
-        echo "to the PATH environment variable"
+        echo -e "${rBG}ERROR:${NC}${wBG} cannot find quartus_sh in the path. Please add the correct path${NC}"
+        echo -e "      ${wBG} to the PATH environment variable${NC}"
         exit 1
     fi
     # Create MiST(er) folders if they don't exist
@@ -225,7 +237,7 @@ if [ $SKIP_COMPILE = FALSE ]; then
     # Update message file
     if [ -e bin/jt${PRJ}_msg.py ]; then
         cd bin
-        jt${PRJ}_msg.py || echo "WARNING: No message file"
+        jt${PRJ}_msg.py || echo -e "${yBG}WARNING:${NC}${wBG} No message file${NC}"
     fi
     cd $PRJPATH/$TARGET || exit 1
     ############################################
@@ -284,7 +296,7 @@ if [ $SKIP_COMPILE = FALSE ]; then
         quartus_sh --flow compile jt$PRJ > "$LOG"
         if ! grep "Full Compilation was successful" "$LOG"; then
             grep -i error "$LOG" -A 2
-            echo "ERROR while compiling the project. Aborting"
+            echo -e "${rBG}ERROR:${NC}${wBG} while compiling the project. ${red}Aborting${NC}"
             report FAIL
             exit 1
         fi
@@ -297,7 +309,7 @@ if [ $SKIP_COMPILE = FALSE ]; then
         gawk -f $JTFRAME/bin/jtioreg.awk $RPTPATH/jt$PRJ.fit.rpt > $RPTPATH/sdram_io.rpt
         cat $RPTPATH/sdram_stuck.rpt $RPTPATH/sdram_io.rpt | sort | uniq --unique > sdram_badio.rpt
         if [ -s sdram_badio.rpt ]; then
-            echo "Warning: some SDRAM signals are not IO registers"
+            echo -e "${yBG}WARNING:${NC}${wBG} some SDRAM signals are not IO registers${NC}"
             cat sdram_badio.rpt
         fi
         grep --color=auto "Worst-case.*-[0-9.]*" "$LOG"
@@ -349,10 +361,17 @@ else
     RBF=$PRJPATH/${TARGET}/jt$PRJ.rbf
 fi
 if [ ! -e $RBF ]; then
-    echo "ERROR: file $RBF does not exist. You need to recompile."
+    echo -e "${rBG}ERROR:${NC}${wBG} file ${red}$RBF${NC}${wBG} does not exist. You need to recompile.${NC}"
     exit 1
 fi
 cp $RBF $RELEASE.rbf
 
-echo completed at $(date)
+END_TIME=$(date +%s)
+
+COMPILE_TIME=$[$END_TIME - $START_TIME]
+HOURS=$[$COMPILE_TIME / 3600]
+MINUTES=$[$COMPILE_TIME / 60]
+SECONDS=$[$COMPILE_TIME % 60]
+
+echo -e "${gBG}completed${NC}${wBG} at $(date) - compile Time: ${red}${HOURS}h${MINUTES}m${SECONDS}s${NC}"
 exit $FAIL
