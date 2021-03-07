@@ -41,7 +41,7 @@ rBG=`tput setab 1; tput setaf 7`
 gBG=`tput setab 2; tput setaf 7`
 bBG=`tput setab 4; tput setaf 7`
 yBG=`tput setab 3; tput setaf 7`
-wBG=`tput setab 7`
+wBG=`tput setab 7; tput setaf 0`
 NC=`tput sgr0`
 
 function parse_args {
