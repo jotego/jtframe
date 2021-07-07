@@ -128,8 +128,10 @@ module emu
     // 1 - D-/TX
     // 2..6 - USR2..USR6
     // Set USER_OUT to 1 to read from USER_IN.
-    input   [6:0] USER_IN,
-    output  [6:0] USER_OUT
+    output        USER_OSD,
+    output  [1:0] USER_MODE,	
+    input   [7:0] USER_IN,
+    output  [7:0] USER_OUT
     `ifdef SIMULATION
     ,output       sim_pxl_cen,
     output        sim_pxl_clk,
@@ -152,7 +154,7 @@ assign VGA_F1=field;
 `endif
 
 assign VGA_SCALER = 0;
-assign USER_OUT   = '1;
+//assign USER_OUT   = '1;
 // assign BUTTONS    = 2'd0; // MiSTer board button emulation from core
 
 wire [3:0] hoffset, voffset;
@@ -499,6 +501,12 @@ u_frame(
     // status
     .st_addr        ( st_addr        ),
     .st_dout        ( st_dout        ),
+     //DB15
+	.CLK_JOY        ( CLK_50M        ),
+    .USER_IN        ( USER_IN        ),
+	.USER_OUT       ( USER_OUT       ),
+	.USER_MODE      ( USER_MODE      ),
+    .USER_OSD       ( USER_OSD       ), 
     // Debug
     .gfx_en         ( gfx_en         ),
     .debug_bus      ( debug_bus      )

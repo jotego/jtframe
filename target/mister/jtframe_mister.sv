@@ -167,6 +167,12 @@ module jtframe_mister #(parameter
     output    [ 1:0]  dip_fxlevel,
     // Control words
     output    [31:0]  dipsw,
+    //DB15 
+    input             CLK_JOY,
+    input     [7:0]   USER_IN,
+    output    [7:0]   USER_OUT,
+	output    [1:0]   USER_MODE,
+    output            USER_OSD,
     // Debug
     output            LED,
     output    [ 3:0]  gfx_en,
@@ -183,6 +189,26 @@ module jtframe_mister #(parameter
     `endif
 `endif
 
+wire [15:0] joydb_1,joydb_2;
+wire        joydb_1ena,joydb_2ena;
+joydbmix joydbmix
+(
+  .CLK_JOY(CLK_JOY),
+  .JOY_FLAG(status[22:20]),
+  .USER_IN(USER_IN),
+  .USER_OUT(USER_OUT),
+  .USER_MODE(USER_MODE),
+  .USER_OSD(USER_OSD),
+  .joydb_1ena(joydb_1ena),
+  .joydb_2ena(joydb_2ena),
+  .joydb_1(joydb_1),
+  .joydb_2(joydb_2)
+);
+wire [15:0]   joystick1 = joydb_1ena ? {joydb_1[11]|(joydb_1[10]&joydb_1[5]),joydb_1[10],joydb_1[3+BUTTONS:0]} : joystick1_USB;
+wire [15:0]   joystick2 = joydb_2ena ? {joydb_2[11]|(joydb_2[10]&joydb_2[5]),joydb_2[10],joydb_2[3+BUTTONS:0]} : joydb_1ena ? joystick1_USB : joystick2_USB;
+wire [15:0]   joystick3 = joydb_1ena ? joystick1_USB : joydb_2ena ? joystick2_USB : joystick3_USB;
+wire [15:0]   joystick4 = joydb_1ena ? joystick2_USB : joydb_2ena ? joystick3_USB : joystick4_USB;
+
 localparam JTFRAME_MR_FASTIO=`JTFRAME_MR_FASTIO;
 
 wire [21:0] gamma_bus;
@@ -193,7 +219,7 @@ wire [ 3:0] hoffset, voffset;
 wire [31:0] cheat;
 wire        ioctl_cheat;
 
-wire [15:0] joystick1, joystick2, joystick3, joystick4;
+wire [15:0] joystick1_USB, joystick2_USB, joystick3_USB, joystick4_USB;
 wire        ps2_kbd_clk, ps2_kbd_data;
 wire        force_scan2x, direct_video;
 
@@ -343,10 +369,11 @@ hps_io #( .STRLEN(0), .PS2DIV(32), .WIDE(JTFRAME_MR_FASTIO) ) u_hps_io
     .ioctl_upload    (                ), // no need
     .ioctl_rd        (                ), // no need
 
-    .joystick_0      ( joystick1      ),
-    .joystick_1      ( joystick2      ),
-    .joystick_2      ( joystick3      ),
-    .joystick_3      ( joystick4      ),
+    .joy_raw         ( joydb_1[5:0]   ),
+    .joystick_0      ( joystick1_USB  ),
+    .joystick_1      ( joystick2_USB  ),
+    .joystick_2      ( joystick3_USB  ),
+    .joystick_3      ( joystick4_USB  ),
     .joystick_analog_0( joystick_analog_0   ),
     .joystick_analog_1( joystick_analog_1   ),
     .ps2_kbd_clk_out ( ps2_kbd_clk    ),

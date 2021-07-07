@@ -3,6 +3,8 @@ OOR,CRT H adjust,0,+1,+2,+3,+4,+5,+6,+7,-8,-7,-6,-5,-4,-3,-2,-1;
 OSV,CRT V adjust,0,+1,+2,+3,+4,+5,+6,+7,-8,-7,-6,-5,-4,-3,-2,-1;
 {{ if not .JTFRAME_OSD_NOLOAD }}    F,rom; {{ end }}
 H0OEF,Aspect Ratio,Original,Full screen,[ARC1],[ARC2];
+OLM,UserIO Joystick,Off,DB15,DB9;
+OK,UserIO Players,1 Player,2 Players;
 {{ if .JTFRAME_VERTICAL }}
     {{ if .JTFRAME_OSD_FLIP }}      O1,Flip screen,Off,On; {{ end }}
                                     H1O2,Rotate screen,Yes,No;{{ end }}
