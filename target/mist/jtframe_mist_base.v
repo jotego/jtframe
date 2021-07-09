@@ -58,8 +58,6 @@ module jtframe_mist_base #(parameter
     input           SPI_SS3,    // OSD interface
     input           SPI_SS4,
     input           CONF_DATA0,
-    // Buttons for MC2(+)
-    input    [ 3:0] BUTTON_n,
     // control
     output [63:0]   status,
     output [31:0]   joystick1,
@@ -82,6 +80,10 @@ module jtframe_mist_base #(parameter
     output          JOY_LOAD,
     input           JOY_DATA,
     output          JOY_SELECT,
+    
+   // Buttons for MC2(+)
+    input    [ 3:0] BUTTON_n,
+        
     // ROM load from SPI
     output [24:0]   ioctl_addr,
     output [ 7:0]   ioctl_data,
@@ -283,12 +285,15 @@ assign ypbpr = 1'b0;
         .JOY_LOAD       ( JOY_LOAD      ),
         .JOY_DATA       ( JOY_DATA      ),
         .JOY_SELECT     ( JOY_SELECT    ),
+        
+        .BUTTON_n       ( BUTTON_n      ),
+        
+        // keyboard
+        .ps2_kbd_clk    ( ps2_kbd_clk   ),
+        .ps2_kbd_data   ( ps2_kbd_data  ),
 
         .joystick1      (joystick1[11:0]),
-        .joystick2      (joystick2[11:0]),
-
-        // Buttons for MC2(+)
-        .button_n       ( BUTTON_n  )
+        .joystick2      (joystick2[11:0])
     );
 
     assign joystick1[31:12]=0;

@@ -24,7 +24,6 @@
     `define MC2_BUTTONS
 `endif
 
-
 module neptuno_top(
     input           CLK50,
     output  [5:0]   VGA_R,
@@ -59,15 +58,42 @@ module neptuno_top(
     // PS2
     input           PS2_CLK,
     input           PS2_DATA,
+    inout wire      ps2_mouse_clk_io  = 1'bz,
+    inout wire      ps2_mouse_data_io = 1'bz,
+    
     // Joystick
     output          JOY_CLK,
     output          JOY_LOAD,
     input           JOY_DATA,
     output          JOY_SELECT
+
 `ifdef MC2_BUTTONS
     // Buttons -only MC2 and MC2+
     ,input [3:0]     BUTTON_n
 `endif
+
+    //STM32
+    ,output wire   stm_rst_o        = 1'bz, // '0' to hold the microcontroller reset line, to free the SD card
+    output wire   SPI_nWAIT         = 1'b1 // '0' to hold the microcontroller data streaming
+        
+`ifdef MULTICORE2PLUS
+    //Multicore 2 plus exclusive
+    
+     // SRAM (IS61WV20488FBLL-10)
+    ,output wire [20:0]sram_addr_o  = 21'b000000000000000000000,
+    inout wire  [7:0]sram_data_io   = 8'bzzzzzzzz,
+    output wire sram_we_n_o         = 1'b1,
+    output wire sram_oe_n_o         = 1'b1, 
+    
+    // SD Card
+    output wire sd_cs_n_o         = 1'bZ,
+    output wire sd_sclk_o         = 1'bZ,
+    output wire sd_mosi_o         = 1'bZ,
+    input wire  sd_miso_i,
+    
+    inout [31:0] GPIO
+        
+`endif   
 
     `ifdef SIMULATION
     ,output         sim_pxl_cen,
@@ -76,6 +102,26 @@ module neptuno_top(
     output          sim_hb
     `endif
 );
+
+assign stm_rst_o = 1'bZ;
+
+`ifdef MULTICORE2PLUS
+    //---------------------------------------------------------
+    //-- MC2+ defaults
+    //---------------------------------------------------------
+    
+    //disable external interfaces for this core
+    assign GPIO = 32'bzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz;
+
+    //no SRAM for this core
+    assign sram_we_n_o  = 1'b1;
+    assign sram_oe_n_o  = 1'b1;
+
+    //all the SD reading goes thru the microcontroller for this core
+    assign sd_cs_n_o = 1'bZ;
+    assign sd_sclk_o = 1'bZ;
+    assign sd_mosi_o = 1'bZ;
+`endif  
 
 `ifdef JTFRAME_SDRAM_LARGE
     localparam SDRAMW=23; // 64 MB
@@ -122,7 +168,6 @@ wire [15:0] sdram_dout;
 `ifndef MC2_BUTTONS
     wire [3:0] BUTTON_n = 4'hf;
 `endif
-
 
 localparam COLORW=`COLORW;
 
@@ -252,7 +297,6 @@ u_frame(
     .SPI_SCK        ( SPI_SCK        ),
     .SPI_SS2        ( SPI_SS2        ),
 
-    // Neptuno / MC2(+) pins
     .JOY_CLK        ( JOY_CLK        ),
     .JOY_LOAD       ( JOY_LOAD       ),
     .JOY_DATA       ( JOY_DATA       ),
@@ -260,6 +304,7 @@ u_frame(
 
     .ps2_clk        ( PS2_CLK        ),
     .ps2_dout       ( PS2_DATA       ),
+    
     .BUTTON_n       ( BUTTON_n       ),
 
     // ROM access from game

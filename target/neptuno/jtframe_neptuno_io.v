@@ -46,12 +46,16 @@ module jtframe_neptuno_io(
     output         JOY_LOAD,
     input          JOY_DATA,
     output         JOY_SELECT,
+    
+    // keyboard
+    input          ps2_kbd_clk,
+    input          ps2_kbd_data,
 
     output  [11:0] joystick1,
     output  [11:0] joystick2,
-
+    
     // Buttons for MC2(+)
-    input   [ 3:0] button_n
+    input   [ 3:0] BUTTON_n
 );
 
 reg [7:0] nept_din=8'hff;
@@ -68,12 +72,15 @@ localparam [2:0] NEPT_CMD_NOP = 3'b111,
 
 reg [4:0] nept_key;
 reg [2:0] nept_cmd;
+reg       scandb_s = 0;
 
 wire [11:0] joy_mix = joystick1[11:0] | joystick2[11:0];
+wire [ 7:0] osd_s;
+wire [31:0] status_s;
+wire        reset_o;
 
 // wire scan2x_toggle = joy_mix[10] & joy_mix[7]; // Start + B buttons
-wire osd_en = (joy_mix[10] & joy_mix[6]) // Start + C buttons of Megadrive controller
-            | ~button_n[3];
+wire osd_en = joy_mix[10] & joy_mix[6]; // Start + C buttons of Megadrive controller
 wire osd_en_filt;
 
 jtframe_enlarger #(4) u_enlarger(
@@ -85,7 +92,6 @@ jtframe_enlarger #(4) u_enlarger(
 );
 
 always @(*) begin
-    // OSD control via joystick
     case( 1'b1 )
         joy_mix[0]: nept_key = NEPT_KEY_RIGHT;
         joy_mix[1]: nept_key = NEPT_KEY_LEFT;
@@ -93,12 +99,6 @@ always @(*) begin
         joy_mix[3]: nept_key = NEPT_KEY_UP;
         joy_mix[4]: nept_key = NEPT_KEY_RETURN;
         default: nept_key = 5'h1f;
-    endcase
-    // OSD control via buttons
-    case( 1'b0 )
-        button_n[0]: nept_key = NEPT_KEY_UP;
-        button_n[1]: nept_key = NEPT_KEY_RETURN;
-        button_n[2]: nept_key = NEPT_KEY_DOWN;
     endcase
     // Bring up OSD if three buttons are pressed
     nept_cmd = osd_en_filt ? NEPT_CMD_OSD : NEPT_CMD_NOP;
@@ -116,8 +116,13 @@ always @(posedge clk_sys) begin
         if ( cntdown!=0 ) begin
             cntdown <= cntdown-1;
             nept_din <= 8'hff;
-        end else
+        end else begin
+`ifdef MULTICORE2PLUS
+            nept_din <= dwn_done ? osd_s : 8'h3f; 
+`else
             nept_din <= dwn_done ? { nept_cmd ,nept_key } : 8'h3f;
+`endif              
+        end
     end
 end
 
@@ -130,7 +135,7 @@ data_io  u_datain (
     .data_in            ( nept_din          ),
     .conf_addr          ( cfg_addr          ),
     .conf_chr           ( cfg_dout          ),
-    .status             ( status[31:0]      ),
+    .status             ( status_s          ),
     .core_mod           ( core_mod          ),
 
     .clk_rom            ( clk_rom           ),
@@ -143,20 +148,32 @@ data_io  u_datain (
     .config_buffer_o    (                   )
 );
 
-assign status[63:32]=0;
-assign scan2x_enb = 0; // scan doubler enabled
+assign status[31:0]  = { status_s[31:1], status_s[0] | reset_o }; 
+assign status[63:32] = 0;
+assign scan2x_enb = scandb_s ^ toggle_scandb_o; // scan doubler enabled
+
 jtframe_neptuno_joy u_joysticks(
-    .clk        ( clk_sys       ),
-    .hs         ( hs            ),
+    .clk          ( clk_sys       ),
+    .reset        ( sdram_init    ),
 
-    .joy_clk    ( JOY_CLK       ),
-    .joy_data   ( JOY_DATA      ),
-    .joy_load   ( JOY_LOAD      ),
-    .joy_select ( JOY_SELECT    ),
-
-    .joy1       ( joystick1[11:0] ),
-    .joy2       ( joystick2[11:0] )
+    .joy_clk      ( JOY_CLK       ),
+    .joy_data     ( JOY_DATA      ),
+    .joy_load     ( JOY_LOAD      ),
+    .joy_select   ( JOY_SELECT    ),
+    
+    .ps2_kbd_clk  ( ps2_kbd_clk   ),
+    .ps2_kbd_data ( ps2_kbd_data  ),
+    .BUTTON_n     ( BUTTON_n      ),
+    
+    .joy1         ( joystick1[11:0] ),
+    .joy2         ( joystick2[11:0] ),
+    .osd_o        ( osd_s           ),
+    .reset_o      ( reset_o         ),
+    .toggle_scandb_o ( toggle_scandb_o )
 );
+
+
+
 
 
 endmodule
