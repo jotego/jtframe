@@ -34,9 +34,9 @@ module jtframe_neptuno_joy(
     output [11:0] joy1,
     output [11:0] joy2,
     
-    output [7:0]  osd_o,
-    output        reset_o,
-    output        toggle_scandb_o
+    output [7:0]  osd,
+    output        mc_reset,
+    output        toggle_scandb
 );
 
 wire joy1_up, joy1_down, joy1_left, joy1_right, joy1_p6, joy1_p9;
@@ -70,8 +70,8 @@ assign P2start_s = ~btn_n_s[1] | controls_s[1];
 assign joy1 = { inv1[11], inv1[7], inv1[10], inv1[9], inv1[8] | P1coin_s, inv1[5] | P1start_s, inv1[4], inv1[6], inv1[3:0] };
 assign joy2 = { inv2[11], inv2[7], inv2[10], inv2[9], inv2[8] | P2coin_s, inv2[5] | P2start_s, inv2[4], inv2[6], inv2[3:0] };
 
-assign osd_o = osd_s;
-assign reset_o = ~btn_n_s[3];
+assign osd = osd_s;
+assign mc_reset = ~btn_n_s[3];
 
 joystick_serial u_serial(
     .clk_i           ( clk        ),
@@ -105,8 +105,14 @@ joystick_sega #(48000) u_sega(
     .sega_strobe_o ( joy_select )
 );*/
 
-// is there a macro for clock speed? Needed for perfect timing on sega controls
-MC2_HID #( .CLK_SPEED(48000) ) k_hid
+
+`ifdef JTFRAME_CLK96 
+    `define CLK_SPEED 96000
+`else
+    `define CLK_SPEED 48000
+`endif
+
+MC2_HID #( .CLK_SPEED( `CLK_SPEED ) ) k_hid
 (
     .clk_i          ( clk          ),
     .reset_i        ( reset        ),
@@ -128,7 +134,7 @@ MC2_HID #( .CLK_SPEED(48000) ) k_hid
     .osd_o          ( osd_s ),
     .osd_enable_i   ( 1'b1 ), //osd_enable ), //ideally we should know when the OSD is open
     
-    .toggle_scandb_o ( toggle_scandb_o ),
+    .toggle_scandb_o ( toggle_scandb ),
     
     //-- sega joystick
     .sega_strobe_o  ( joy_select ),

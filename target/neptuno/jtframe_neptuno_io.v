@@ -77,7 +77,7 @@ reg       scandb_s = 0;
 wire [11:0] joy_mix = joystick1[11:0] | joystick2[11:0];
 wire [ 7:0] osd_s;
 wire [31:0] status_s;
-wire        reset_o;
+wire        mc_reset;
 
 // wire scan2x_toggle = joy_mix[10] & joy_mix[7]; // Start + B buttons
 wire osd_en = joy_mix[10] & joy_mix[6]; // Start + C buttons of Megadrive controller
@@ -148,9 +148,9 @@ data_io  u_datain (
     .config_buffer_o    (                   )
 );
 
-assign status[31:0]  = { status_s[31:1], status_s[0] | reset_o }; 
+assign status[31:0]  = { status_s[31:1], status_s[0] | mc_reset }; 
 assign status[63:32] = 0;
-assign scan2x_enb = scandb_s ^ toggle_scandb_o; // scan doubler enabled
+assign scan2x_enb = scandb_s ^ toggle_scandb; // scan doubler enabled
 
 jtframe_neptuno_joy u_joysticks(
     .clk          ( clk_sys       ),
@@ -167,9 +167,9 @@ jtframe_neptuno_joy u_joysticks(
     
     .joy1         ( joystick1[11:0] ),
     .joy2         ( joystick2[11:0] ),
-    .osd_o        ( osd_s           ),
-    .reset_o      ( reset_o         ),
-    .toggle_scandb_o ( toggle_scandb_o )
+    .osd          ( osd_s         ),
+    .mc_reset     ( mc_reset      ),
+    .toggle_scandb( toggle_scandb )
 );
 
 

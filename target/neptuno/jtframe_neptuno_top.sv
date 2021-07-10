@@ -24,6 +24,8 @@
     `define MC2_BUTTONS
 `endif
 
+//`default_nettype none
+
 module neptuno_top(
     input           CLK50,
     output  [5:0]   VGA_R,
@@ -58,8 +60,8 @@ module neptuno_top(
     // PS2
     input           PS2_CLK,
     input           PS2_DATA,
-    inout wire      ps2_mouse_clk_io  = 1'bz,
-    inout wire      ps2_mouse_data_io = 1'bz,
+    inout wire      PS2_MOUSE_CLK,
+    inout wire      PS2_MOUSE_DATA,
     
     // Joystick
     output          JOY_CLK,
@@ -73,23 +75,23 @@ module neptuno_top(
 `endif
 
     //STM32
-    ,output wire   stm_rst_o        = 1'bz, // '0' to hold the microcontroller reset line, to free the SD card
-    output wire   SPI_nWAIT         = 1'b1 // '0' to hold the microcontroller data streaming
+    ,output wire  STM_RESET,
+    output wire   SPI_nWAIT
         
 `ifdef MULTICORE2PLUS
     //Multicore 2 plus exclusive
     
-     // SRAM (IS61WV20488FBLL-10)
-    ,output wire [20:0]sram_addr_o  = 21'b000000000000000000000,
-    inout wire  [7:0]sram_data_io   = 8'bzzzzzzzz,
-    output wire sram_we_n_o         = 1'b1,
-    output wire sram_oe_n_o         = 1'b1, 
+    // SRAM (IS61WV20488FBLL-10)
+    ,output wire [20:0]SRAM_ADDR,
+    inout wire  [7:0]SRAM_DATA,
+    output wire SRAM_WE,
+    output wire SRAM_OE,
     
     // SD Card
-    output wire sd_cs_n_o         = 1'bZ,
-    output wire sd_sclk_o         = 1'bZ,
-    output wire sd_mosi_o         = 1'bZ,
-    input wire  sd_miso_i,
+    output wire SD_CS,
+    output wire SD_SCLK,
+    output wire SD_MOSI,
+    input wire  SD_MISO,
     
     inout [31:0] GPIO
         
@@ -103,24 +105,22 @@ module neptuno_top(
     `endif
 );
 
-assign stm_rst_o = 1'bZ;
-
 `ifdef MULTICORE2PLUS
     //---------------------------------------------------------
     //-- MC2+ defaults
     //---------------------------------------------------------
     
     //disable external interfaces for this core
-    assign GPIO = 32'bzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz;
+    assign GPIO = 32'Hzzzz;
 
     //no SRAM for this core
-    assign sram_we_n_o  = 1'b1;
-    assign sram_oe_n_o  = 1'b1;
+    assign SRAM_WE  = 1'b1;
+    assign SRAM_OE  = 1'b1;
 
     //all the SD reading goes thru the microcontroller for this core
-    assign sd_cs_n_o = 1'bZ;
-    assign sd_sclk_o = 1'bZ;
-    assign sd_mosi_o = 1'bZ;
+    assign SD_CS = 1'bZ;
+    assign SD_SCLK = 1'bZ;
+    assign SD_MOSI = 1'bZ;
 `endif  
 
 `ifdef JTFRAME_SDRAM_LARGE
