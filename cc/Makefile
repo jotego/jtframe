@@ -1,23 +1,11 @@
-programs = pcb2ver bin2m bin2raw drop1 bin2hex byte2hex msg2hex lut2hex hex2bin  
+programs = bin2m msg2hex lut2hex  
 
 all: $(programs)
 	cp $(programs) ../bin
 
-pcb2ver:
-
 bin2m:
-
-bin2raw:
-
-drop1:
-
-bin2hex:
-
-byte2hex:
 
 msg2hex:
 
 lut2hex:
-
-hex2bin:
 

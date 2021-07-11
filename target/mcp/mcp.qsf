@@ -222,11 +222,13 @@ set_location_assignment PIN_R1 -to SD_MISO
 set_location_assignment PIN_P1 -to SD_MOSI
 set_location_assignment PIN_R2 -to SD_SCLK
 
+
 # Pull-ups
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to BUTTON_n[3]
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to BUTTON_n[2]
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to BUTTON_n[1]
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to BUTTON_n[0]
+
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to PS2_CLK
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to PS2_DATA
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to PS2_MOUSE_CLK

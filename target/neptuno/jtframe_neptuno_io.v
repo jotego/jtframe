@@ -84,7 +84,9 @@ reg       scandb_s = 0;
 wire [11:0] joy_mix = joystick1[11:0] | joystick2[11:0];
 wire [ 7:0] osd_s;
 wire [31:0] status_s;
+
 wire        mc_reset;
+
 
 // wire scan2x_toggle = joy_mix[10] & joy_mix[7]; // Start + B buttons
 wire osd_en = joy_mix[10] & joy_mix[6]; // Start + C buttons of Megadrive controller
@@ -124,6 +126,7 @@ always @(posedge clk_sys) begin
             cntdown <= cntdown-1;
             nept_din <= 8'hff;
         end else begin
+
 `ifdef MC2_PINS
             nept_din <= dwn_done ? osd_s : 8'h3f; 
 `else
@@ -173,6 +176,7 @@ jtframe_neptuno_joy u_joysticks(
     
     .joy1         ( joystick1[11:0] ),
     .joy2         ( joystick2[11:0] ),
+  
     .osd          ( osd_s         ),
     .mc_reset     ( mc_reset      ),
     .toggle_scandb( toggle_scandb )

@@ -24,8 +24,6 @@
     `define MC2_PINS
 `endif
 
-//`default_nettype none
-
 module neptuno_top(
     input           CLK50,
     output  [5:0]   VGA_R,
@@ -339,6 +337,7 @@ u_frame(
 
     .joy1_bus       ( joy1_s         ),
     .joy2_bus       ( joy2_s         ),
+
     .JOY_SELECT     ( JOY_SELECT     ),
 
     .ps2_clk        ( PS2_CLK        ),

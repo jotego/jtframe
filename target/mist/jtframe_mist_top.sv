@@ -298,6 +298,14 @@ u_frame(
     .joystick_analog_0( joystick_analog_0 ),
     .joystick_analog_1( joystick_analog_1 ),
     .LED            ( LED            ),
+    // Unused in MiST
+    .BUTTON_n       ( 4'hf           ),
+    .ps2_clk        (                ),
+    .ps2_dout       (                ),
+    .JOY_CLK        (                ),
+    .JOY_LOAD       (                ),
+    .JOY_DATA       ( 1'b1           ),
+    .JOY_SELECT     (                ),
     // DIP and OSD settings
     .enable_fm      ( enable_fm      ),
     .enable_psg     ( enable_psg     ),
@@ -381,13 +389,13 @@ u_game(
     // LED
     .game_led    ( game_led[0]    ),
 
-    .start_button( game_start[STARTW-1:0]      ),
-    .coin_input  ( game_coin[STARTW-1:0]       ),
-    .joystick1   ( game_joy1[BUTTONS+3:0]      ),
-    .joystick2   ( game_joy2[BUTTONS+3:0]      ),
+    .start_button( game_start[STARTW-1:0] ),
+    .coin_input  ( game_coin[STARTW-1:0]  ),
+    .joystick1   ( game_joy1[BUTTONS+3:0] ),
+    .joystick2   ( game_joy2[BUTTONS+3:0] ),
     `ifdef JTFRAME_4PLAYERS
-    .joystick3   ( game_joy3[BUTTONS+3:0]      ),
-    .joystick4   ( game_joy4[BUTTONS+3:0]      ),
+    .joystick3   ( game_joy3[BUTTONS+3:0] ),
+    .joystick4   ( game_joy4[BUTTONS+3:0] ),
     `endif
     `ifdef JTFRAME_ANALOG
     .joyana1     ( joystick_analog_0   ),

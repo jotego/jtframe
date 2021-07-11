@@ -1,4 +1,5 @@
 # Game clocks
+
 Games are expected to operate on a 48MHz clock using clock enable signals. There is an optional 6MHz that can be enabled with the macro **JTFRAME_CLK6**. This clock goes in the game module through a _clk6_ port which is only connected to when that macro is defined. _jtbtiger_ is an example of game using this feature.
 
  clock input | Macro Needed
@@ -31,3 +32,18 @@ This only applies to MiSTer. For MiST the approach is different and there are tw
 The script **jtcore** handles this process transparently.
 
 By default unless **JTFRAME_MR_FASTIO** is already defined, **JTFRAME_CLK96** will define it to 1. This enables fast ROM download in MiSTer using 16-bit mode in _hps_io_.
+
+# Internal JTFRAME clocks
+
+The clocks passed to the target subsystem (jtframe_mist, jtframe_mister or jtframe_neptuno) are three:
+
+clock     |  Use                    | Frequency
+----------|-------------------------|--------------------
+clk_sys   | Video & general purpose | same as game clock **clk**
+clk_rom   | SDRAM access            | same as clk_sys or higher
+clk_pico  | picoBlaze clock         | 48MHz
+
+clk_rom is controlled by the macros **JTFRAME_SDRAM96**
+clk_sys is normally 48MHz, even if clk_rom is 96MHz. It can be set to 96MHz with **JTFRAME_CLK96**.
+
+Games can move these frequencies by replacing the PLL (using the **JTFRAME_PLL** macro) but the changes should be within ±10% of the expected values. So far, only System16 moves these frequencies from 48MHz to ~50MHz

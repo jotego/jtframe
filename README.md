@@ -24,7 +24,6 @@ You can show your appreciation through
 * [Cheat subsystem](doc/cheat.md)
 * [Compilation macros](doc/macros.md)
 * [IP reference](doc/ip.md)
-* [74xx Library Simulation](doc/74.md)
 
 # Licensing
 

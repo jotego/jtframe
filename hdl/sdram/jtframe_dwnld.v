@@ -132,7 +132,7 @@ integer          f, readcnt, dumpcnt;
 reg       [ 7:0] mem[0:`GAME_ROM_LEN];
 
 initial begin
-    dumpcnt = PROM_START;
+    dumpcnt = PROM_START+HEADER;
     if( SIMFILE != "" && PROM_EN ) begin
         f=$fopen(SIMFILE,"rb");
         if( f != 0 ) begin
@@ -160,7 +160,7 @@ always @(posedge clk) begin
         prog_we   <= 0;
         prog_mask <= 2'b11;
         data_out  <= mem[dumpcnt];
-        prog_addr <= dumpcnt[21:0];
+        prog_addr <= dumpcnt[21:0]-HEADER;
         dumpcnt   <= dumpcnt+1;
     end else begin
         prom_we <= 0;

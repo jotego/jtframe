@@ -68,6 +68,9 @@ function parse_args {
             -rename)
                 shift
                 RENAME=$1;;
+            -seed)
+                shift
+                SEED=$1;;
             -help | -h)
                 show_usage;;
             *)  if [ -z "$PRJ" ]; then
@@ -154,7 +157,7 @@ else
 fi
 shift
 
-OUTPUTDIR=output_${SEED}
+OUTPUTDIR=output_files
 
 # Check Quartus path
 case $TARGET in
@@ -395,7 +398,12 @@ if [ -z $RENAME ]; then
 else
     SHORT=jt$RENAME
 fi
-RELEASE=${SHORT}_$CORESTAMP
+
+# date stamp is only added to MiSTer output
+RELEASE=${SHORT}
+if [ $TARGET = mister ]; then
+    RELEASE=${RELEASE}_$CORESTAMP
+fi
 
 if [ $SEED != 1 ]; then
     SEED_SUFFIX=_$SEED

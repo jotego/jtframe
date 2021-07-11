@@ -16,7 +16,10 @@
     Version: 1.0
     Date: 12-6-2021 */
 
+
+
 module jtframe_neptuno_joy(
+  
     input        clk,
     input        reset,
 
@@ -34,6 +37,7 @@ module jtframe_neptuno_joy(
     output [7:0]  osd,
     output        mc_reset,
     output        toggle_scandb
+
 );
 
 wire [11:0] inv1, inv2;
@@ -42,7 +46,7 @@ wire [ 8:0] controls_s;
 wire [ 3:0] btn_n_s;
 
 wire P1coin_s, P2coin_s, P1start_s, P2start_s;
- 
+
 assign P1coin_s  = ~btn_n_s[2] | controls_s[4];
 assign P2coin_s  = ~btn_n_s[2] | controls_s[5];
 assign P1start_s = ~btn_n_s[0] | controls_s[0];

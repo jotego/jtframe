@@ -100,12 +100,10 @@ module jtframe_mist #(parameter
     // and outputs for MiST
     inout           ps2_clk,
     inout           ps2_dout,
-`ifdef NEPTUNO
     // Joystick
     input     [5:0] joy1_bus,
     input     [5:0] joy2_bus,
     output          JOY_SELECT,
-`endif
     // ROM load from SPI
     output   [24:0] ioctl_addr,
     output   [ 7:0] ioctl_data,
