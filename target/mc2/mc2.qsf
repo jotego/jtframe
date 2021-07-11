@@ -56,31 +56,33 @@ set_location_assignment PIN_T9 -to BUTTON_n[0]
 set_location_assignment PIN_E1 -to CLK50
 
 # MultiCore2 has direct connection to the PS2 keyboard
-set_location_assignment PIN_F3  -to PS2_CLK
-set_location_assignment PIN_F1  -to PS2_DATA
-# set_location_assignment PIN_B1  -to ps2_mouse_clk_io
-# set_location_assignment PIN_D1  -to ps2_mouse_data_io
+set_location_assignment   PIN_F3  -to PS2_CLK
+set_location_assignment   PIN_F1  -to PS2_DATA
+# set_location_assignment PIN_B1  -to PS2_MOUSE_CLK
+# set_location_assignment PIN_D1  -to PS2_MOUSE_DATA
 
 # MultiCore2 has direct connection to joystick ports
-set_location_assignment PIN_N8 -to joy1[3]
-set_location_assignment PIN_M7 -to joy1[2]
-set_location_assignment PIN_T7 -to joy1[1]
-set_location_assignment PIN_R7 -to joy1[0]
-set_location_assignment PIN_M6 -to joy1[4]
-set_location_assignment PIN_T6 -to joy1[5]
-set_location_assignment PIN_P2 -to joy2[3]
-set_location_assignment PIN_N2 -to joy2[2]
-set_location_assignment PIN_N1 -to joy2[1]
-set_location_assignment PIN_L2 -to joy2[0]
-set_location_assignment PIN_P1 -to joy2[4]
-set_location_assignment PIN_L1 -to joy2[5]
-set_location_assignment PIN_M8 -to joyX
+set_location_assignment PIN_N8 -to JOY1[3]
+set_location_assignment PIN_M7 -to JOY1[2]
+set_location_assignment PIN_T7 -to JOY1[1]
+set_location_assignment PIN_R7 -to JOY1[0]
+set_location_assignment PIN_M6 -to JOY1[4]
+set_location_assignment PIN_T6 -to JOY1[5]
+set_location_assignment PIN_P2 -to JOY2[3]
+set_location_assignment PIN_N2 -to JOY2[2]
+set_location_assignment PIN_N1 -to JOY2[1]
+set_location_assignment PIN_L2 -to JOY2[0]
+set_location_assignment PIN_P1 -to JOY2[4]
+set_location_assignment PIN_L1 -to JOY2[5]
+set_location_assignment PIN_M8 -to JOY_SELECT
 
 # MultiCore2 communication with STM32 MCU
 set_location_assignment PIN_T10 -to SPI_SS2
 set_location_assignment PIN_P11 -to SPI_SCK
 set_location_assignment PIN_N11 -to SPI_DO
 set_location_assignment PIN_N6  -to SPI_DI
+set_location_assignment PIN_R6 -to SPI_nWAIT
+set_location_assignment PIN_N9 -to STM_RESET
 
 # Video for MultiCore2
 # LSB pins, ie [0], are not connected
@@ -151,6 +153,69 @@ set_location_assignment PIN_K2 -to AUDIO_R
 # Unused audio pins:
 set_location_assignment PIN_N5 -to mic_o
 set_location_assignment PIN_T12 -to ear_i
+
+# SRAM
+set_location_assignment PIN_C2 -to SRAM_ADDR[18]
+set_location_assignment PIN_F2 -to SRAM_ADDR[17]
+set_location_assignment PIN_G2 -to SRAM_ADDR[16]
+set_location_assignment PIN_G1 -to SRAM_ADDR[15]
+set_location_assignment PIN_L3 -to SRAM_ADDR[14]
+set_location_assignment PIN_J1 -to SRAM_ADDR[13]
+set_location_assignment PIN_G5 -to SRAM_ADDR[12]
+set_location_assignment PIN_K1 -to SRAM_ADDR[11]
+set_location_assignment PIN_J2 -to SRAM_ADDR[10]
+set_location_assignment PIN_T14 -to SRAM_ADDR[9]
+set_location_assignment PIN_T15 -to SRAM_ADDR[8]
+set_location_assignment PIN_P15 -to SRAM_ADDR[7]
+set_location_assignment PIN_N14 -to SRAM_ADDR[6]
+set_location_assignment PIN_J16 -to SRAM_ADDR[5]
+set_location_assignment PIN_J13 -to SRAM_ADDR[4]
+set_location_assignment PIN_G15 -to SRAM_ADDR[3]
+set_location_assignment PIN_F15 -to SRAM_ADDR[2]
+set_location_assignment PIN_D15 -to SRAM_ADDR[1]
+set_location_assignment PIN_C15 -to SRAM_ADDR[0]
+set_location_assignment PIN_E7 -to SRAM_DATA[7]
+set_location_assignment PIN_E6 -to SRAM_DATA[6]
+set_location_assignment PIN_F8 -to SRAM_DATA[5]
+set_location_assignment PIN_L4 -to SRAM_DATA[4]
+set_location_assignment PIN_F9 -to SRAM_DATA[3]
+set_location_assignment PIN_R11 -to SRAM_DATA[2]
+set_location_assignment PIN_K16 -to SRAM_DATA[1]
+set_location_assignment PIN_F14 -to SRAM_DATA[0]
+set_location_assignment PIN_J15 -to SRAM_WE
+set_location_assignment PIN_L8 -to SRAM_OE
+
+#HDMI
+set_location_assignment PIN_R13 -to TMDS[7]
+set_location_assignment PIN_T13 -to TMDS[6]
+set_location_assignment PIN_N15 -to TMDS[5]
+set_location_assignment PIN_N16 -to TMDS[4]
+set_location_assignment PIN_R16 -to TMDS[3]
+set_location_assignment PIN_P16 -to TMDS[2]
+set_location_assignment PIN_P14 -to TMDS[1]
+set_location_assignment PIN_R14 -to TMDS[0]
+
+set_location_assignment PIN_R3 -to SD_CS
+set_location_assignment PIN_R12 -to SD_MISO
+set_location_assignment PIN_R4 -to SD_MOSI
+set_location_assignment PIN_T3 -to SD_SCLK
+
+
+
+set_instance_assignment -name CURRENT_STRENGTH_NEW "MAXIMUM CURRENT" -to TMDS[7]
+set_instance_assignment -name CURRENT_STRENGTH_NEW "MAXIMUM CURRENT" -to TMDS[6]
+set_instance_assignment -name CURRENT_STRENGTH_NEW "MAXIMUM CURRENT" -to TMDS[5]
+set_instance_assignment -name CURRENT_STRENGTH_NEW "MAXIMUM CURRENT" -to TMDS[4]
+set_instance_assignment -name CURRENT_STRENGTH_NEW "MAXIMUM CURRENT" -to TMDS[3]
+set_instance_assignment -name CURRENT_STRENGTH_NEW "MAXIMUM CURRENT" -to TMDS[2]
+set_instance_assignment -name CURRENT_STRENGTH_NEW "MAXIMUM CURRENT" -to TMDS[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW "MAXIMUM CURRENT" -to TMDS[0]
+
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to PS2_CLK
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to PS2_DATA
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to PS2_MOUSE_CLK
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to PS2_MOUSE_DATA
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to SD_MISO
 
 set_global_assignment -name EDA_SIMULATION_TOOL "<None>"
 

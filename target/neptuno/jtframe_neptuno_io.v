@@ -15,6 +15,14 @@
     Author: Jose Tejada Gomez. Twitter: @topapate
     Version: 1.0
     Date: 12-6-2021 */
+    
+`ifdef MULTICORE2PLUS
+    `define MC2_PINS
+`endif
+
+`ifdef MULTICORE2
+    `define MC2_PINS
+`endif
 
 module jtframe_neptuno_io(
     input          sdram_init,
@@ -42,9 +50,8 @@ module jtframe_neptuno_io(
     output         scan2x_enb,
 
     // DB9 Joysticks
-    output         JOY_CLK,
-    output         JOY_LOAD,
-    input          JOY_DATA,
+    input    [5:0] joy1_bus,
+    input    [5:0] joy2_bus,
     output         JOY_SELECT,
     
     // keyboard
@@ -117,7 +124,7 @@ always @(posedge clk_sys) begin
             cntdown <= cntdown-1;
             nept_din <= 8'hff;
         end else begin
-`ifdef MULTICORE2PLUS
+`ifdef MC2_PINS
             nept_din <= dwn_done ? osd_s : 8'h3f; 
 `else
             nept_din <= dwn_done ? { nept_cmd ,nept_key } : 8'h3f;
@@ -156,9 +163,8 @@ jtframe_neptuno_joy u_joysticks(
     .clk          ( clk_sys       ),
     .reset        ( sdram_init    ),
 
-    .joy_clk      ( JOY_CLK       ),
-    .joy_data     ( JOY_DATA      ),
-    .joy_load     ( JOY_LOAD      ),
+    .joy1_bus     ( joy1_bus      ),
+    .joy2_bus     ( joy2_bus      ),
     .joy_select   ( JOY_SELECT    ),
     
     .ps2_kbd_clk  ( ps2_kbd_clk   ),

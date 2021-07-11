@@ -76,9 +76,8 @@ module jtframe_mist_base #(parameter
     output          snd_pwm_left,
     output          snd_pwm_right,
     // Direct joystick connection (Neptuno / MC)
-    output          JOY_CLK,
-    output          JOY_LOAD,
-    input           JOY_DATA,
+    input   [5:0]   joy1_bus,
+    input   [5:0]   joy2_bus,
     output          JOY_SELECT,
     
    // Buttons for MC2(+)
@@ -281,9 +280,8 @@ assign ypbpr = 1'b0;
         .scan2x_enb     ( scan2x_enb    ),
 
         // DB9 Joysticks
-        .JOY_CLK        ( JOY_CLK       ),
-        .JOY_LOAD       ( JOY_LOAD      ),
-        .JOY_DATA       ( JOY_DATA      ),
+        .joy1_bus       ( joy1_bus      ),
+        .joy2_bus       ( joy2_bus      ),
         .JOY_SELECT     ( JOY_SELECT    ),
         
         .BUTTON_n       ( BUTTON_n      ),
