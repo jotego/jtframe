@@ -15,6 +15,14 @@
     Author: Jose Tejada Gomez. Twitter: @topapate
     Version: 1.0
     Date: 12-6-2021 */
+    
+`ifdef MULTICORE2PLUS
+    `define MC2_PINS
+`endif
+
+`ifdef MULTICORE2
+    `define MC2_PINS
+`endif
 
 module jtframe_neptuno_io(
     input          sdram_init,
@@ -42,9 +50,8 @@ module jtframe_neptuno_io(
     output         scan2x_enb,
 
     // DB9 Joysticks
-    output         JOY_CLK,
-    output         JOY_LOAD,
-    input          JOY_DATA,
+    input    [5:0] joy1_bus,
+    input    [5:0] joy2_bus,
     output         JOY_SELECT,
     
     // keyboard
@@ -77,7 +84,9 @@ reg       scandb_s = 0;
 wire [11:0] joy_mix = joystick1[11:0] | joystick2[11:0];
 wire [ 7:0] osd_s;
 wire [31:0] status_s;
-wire        reset_o;
+
+wire        mc_reset;
+
 
 // wire scan2x_toggle = joy_mix[10] & joy_mix[7]; // Start + B buttons
 wire osd_en = joy_mix[10] & joy_mix[6]; // Start + C buttons of Megadrive controller
@@ -117,7 +126,8 @@ always @(posedge clk_sys) begin
             cntdown <= cntdown-1;
             nept_din <= 8'hff;
         end else begin
-`ifdef MULTICORE2PLUS
+
+`ifdef MC2_PINS
             nept_din <= dwn_done ? osd_s : 8'h3f; 
 `else
             nept_din <= dwn_done ? { nept_cmd ,nept_key } : 8'h3f;
@@ -148,17 +158,16 @@ data_io  u_datain (
     .config_buffer_o    (                   )
 );
 
-assign status[31:0]  = { status_s[31:1], status_s[0] | reset_o }; 
+assign status[31:0]  = { status_s[31:1], status_s[0] | mc_reset }; 
 assign status[63:32] = 0;
-assign scan2x_enb = scandb_s ^ toggle_scandb_o; // scan doubler enabled
+assign scan2x_enb = scandb_s ^ toggle_scandb; // scan doubler enabled
 
 jtframe_neptuno_joy u_joysticks(
     .clk          ( clk_sys       ),
     .reset        ( sdram_init    ),
 
-    .joy_clk      ( JOY_CLK       ),
-    .joy_data     ( JOY_DATA      ),
-    .joy_load     ( JOY_LOAD      ),
+    .joy1_bus     ( joy1_bus      ),
+    .joy2_bus     ( joy2_bus      ),
     .joy_select   ( JOY_SELECT    ),
     
     .ps2_kbd_clk  ( ps2_kbd_clk   ),
@@ -167,9 +176,10 @@ jtframe_neptuno_joy u_joysticks(
     
     .joy1         ( joystick1[11:0] ),
     .joy2         ( joystick2[11:0] ),
-    .osd_o        ( osd_s           ),
-    .reset_o      ( reset_o         ),
-    .toggle_scandb_o ( toggle_scandb_o )
+  
+    .osd          ( osd_s         ),
+    .mc_reset     ( mc_reset      ),
+    .toggle_scandb( toggle_scandb )
 );
 
 

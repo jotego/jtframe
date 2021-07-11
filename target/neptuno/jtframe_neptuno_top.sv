@@ -17,11 +17,11 @@
     Date: 22-2-2019 */
 
 `ifdef MULTICORE2PLUS
-    `define MC2_BUTTONS
+    `define MC2_PINS
 `endif
 
 `ifdef MULTICORE2
-    `define MC2_BUTTONS
+    `define MC2_PINS
 `endif
 
 module neptuno_top(
@@ -58,69 +58,76 @@ module neptuno_top(
     // PS2
     input           PS2_CLK,
     input           PS2_DATA,
-    inout wire      ps2_mouse_clk_io  = 1'bz,
-    inout wire      ps2_mouse_data_io = 1'bz,
+    inout           PS2_MOUSE_CLK,
+    inout           PS2_MOUSE_DATA
     
     // Joystick
-    output          JOY_CLK,
+`ifndef MULTICORE2
+    // joy pins for neputo and Multicore 2 plus
+    ,output         JOY_CLK,
     output          JOY_LOAD,
-    input           JOY_DATA,
-    output          JOY_SELECT
+    input           JOY_DATA
+`else
+    //joy pins for Multicore 2
+   ,input [5:0]     JOY1,
+    input [5:0]     JOY2
+`endif
 
-`ifdef MC2_BUTTONS
-    // Buttons -only MC2 and MC2+
-    ,input [3:0]     BUTTON_n
+    ,output          JOY_SELECT
+
+`ifdef MC2_PINS
+    // only MC2 and MC2+ pins
+    ,input [3:0]     BUTTON_n,
+    
+    // SD Card
+    output wire SD_CS,
+    output wire SD_SCLK,
+    output wire SD_MOSI,
+    input wire  SD_MISO,   
+    
+    // SRAM
+    output wire [20:0]SRAM_ADDR,
+    inout wire  [7:0]SRAM_DATA,
+    output wire SRAM_WE,
+    output wire SRAM_OE 
 `endif
 
     //STM32
-    ,output wire   stm_rst_o        = 1'bz, // '0' to hold the microcontroller reset line, to free the SD card
-    output wire   SPI_nWAIT         = 1'b1 // '0' to hold the microcontroller data streaming
+    ,output wire  STM_RESET,
+    output wire   SPI_nWAIT
         
 `ifdef MULTICORE2PLUS
-    //Multicore 2 plus exclusive
-    
-     // SRAM (IS61WV20488FBLL-10)
-    ,output wire [20:0]sram_addr_o  = 21'b000000000000000000000,
-    inout wire  [7:0]sram_data_io   = 8'bzzzzzzzz,
-    output wire sram_we_n_o         = 1'b1,
-    output wire sram_oe_n_o         = 1'b1, 
-    
-    // SD Card
-    output wire sd_cs_n_o         = 1'bZ,
-    output wire sd_sclk_o         = 1'bZ,
-    output wire sd_mosi_o         = 1'bZ,
-    input wire  sd_miso_i,
-    
-    inout [31:0] GPIO
-        
+    //Multicore 2 plus exclusive pins
+    ,inout [31:0] GPIO 
 `endif   
 
-    `ifdef SIMULATION
+`ifdef SIMULATION
     ,output         sim_pxl_cen,
     output          sim_pxl_clk,
     output          sim_vb,
     output          sim_hb
-    `endif
+`endif
 );
 
-assign stm_rst_o = 1'bZ;
-
-`ifdef MULTICORE2PLUS
-    //---------------------------------------------------------
-    //-- MC2+ defaults
-    //---------------------------------------------------------
-    
-    //disable external interfaces for this core
-    assign GPIO = 32'bzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz;
-
+//---------------------------------------------------------
+//-- Multicores defaults
+//---------------------------------------------------------
+`ifdef MC2_PINS    
     //no SRAM for this core
-    assign sram_we_n_o  = 1'b1;
-    assign sram_oe_n_o  = 1'b1;
+    assign SRAM_WE  = 1'b1;
+    assign SRAM_OE  = 1'b1;
 
     //all the SD reading goes thru the microcontroller for this core
-    assign sd_cs_n_o = 1'bZ;
-    assign sd_sclk_o = 1'bZ;
-    assign sd_mosi_o = 1'bZ;
+    assign SD_CS   = 1'bZ;
+    assign SD_SCLK = 1'bZ;
+    assign SD_MOSI = 1'bZ;
+    
+    assign STM_RESET = 1'bZ;
+`endif  
+
+`ifdef MULTICORE2PLUS    
+   //disable external interfaces for this core
+    assign GPIO = 32'Hzzzz; 
 `endif  
 
 `ifdef JTFRAME_SDRAM_LARGE
@@ -165,7 +172,7 @@ wire [15:0] sdram_dout;
 `define COLORW 4
 `endif
 
-`ifndef MC2_BUTTONS
+`ifndef MC2_PINS
     wire [3:0] BUTTON_n = 4'hf;
 `endif
 
@@ -191,6 +198,37 @@ wire pll_locked, clk_pico;
 `ifndef STEREO_GAME
 assign snd_right = snd_left;
 `endif
+
+//joysticks
+wire [5:0] joy1_s;
+wire [5:0] joy2_s;
+
+`ifndef MULTICORE2
+    joystick_serial u_serial(
+        .clk_i           ( clk_sys    ),
+        .joy_data_i      ( JOY_DATA   ),
+        .joy_clk_o       ( JOY_CLK    ),
+        .joy_load_o      ( JOY_LOAD   ),
+
+        .joy1_up_o       ( joy1_s[3] ),
+        .joy1_down_o     ( joy1_s[2] ),
+        .joy1_left_o     ( joy1_s[1] ),
+        .joy1_right_o    ( joy1_s[0] ),
+        .joy1_fire1_o    ( joy1_s[4] ),
+        .joy1_fire2_o    ( joy1_s[5] ),
+
+        .joy2_up_o       ( joy2_s[3] ),
+        .joy2_down_o     ( joy2_s[2] ),
+        .joy2_left_o     ( joy2_s[1] ),
+        .joy2_right_o    ( joy2_s[0] ),
+        .joy2_fire1_o    ( joy2_s[4] ),
+        .joy2_fire2_o    ( joy2_s[5] )
+    );
+`else
+    assign joy1_s = JOY1;
+    assign joy2_s = JOY2;
+`endif
+
 
 jtframe_mist_clocks u_clocks(
     .clk_ext    ( CLK50          ),    // 27MHz for MiST, 50MHz for Neptuno
@@ -297,9 +335,9 @@ u_frame(
     .SPI_SCK        ( SPI_SCK        ),
     .SPI_SS2        ( SPI_SS2        ),
 
-    .JOY_CLK        ( JOY_CLK        ),
-    .JOY_LOAD       ( JOY_LOAD       ),
-    .JOY_DATA       ( JOY_DATA       ),
+    .joy1_bus       ( joy1_s         ),
+    .joy2_bus       ( joy2_s         ),
+
     .JOY_SELECT     ( JOY_SELECT     ),
 
     .ps2_clk        ( PS2_CLK        ),
